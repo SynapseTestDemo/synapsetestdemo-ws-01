@@ -1,0 +1,21 @@
+{
+	"name": "StoreData_Parquet_ADLS",
+	"properties": {
+		"linkedServiceName": {
+			"referenceName": "synapsedemosws-WorkspaceDefaultStorage",
+			"type": "LinkedServiceReference"
+		},
+		"annotations": [],
+		"type": "Parquet",
+		"typeProperties": {
+			"location": {
+				"type": "AzureBlobFSLocation",
+				"folderPath": "RetailData",
+				"fileSystem": "default"
+			},
+			"compressionCodec": "snappy"
+		},
+		"schema": []
+	},
+	"type": "Microsoft.Synapse/workspaces/datasets"
+}

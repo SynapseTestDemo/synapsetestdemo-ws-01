@@ -1,0 +1,56 @@
+{
+	"name": "CosmosDbSqlApiCollection1",
+	"properties": {
+		"linkedServiceName": {
+			"referenceName": "RetailSalesDemoDB",
+			"type": "LinkedServiceReference"
+		},
+		"annotations": [],
+		"type": "CosmosDbSqlApiCollection",
+		"schema": {
+			"type": "object",
+			"properties": {
+				"income": {
+					"type": "string"
+				},
+				"minoritiesRatio": {
+					"type": "string"
+				},
+				"largeHH": {
+					"type": "string"
+				},
+				"highIncome150Ratio": {
+					"type": "string"
+				},
+				"more1FullTimeEmployeeRatio": {
+					"type": "string"
+				},
+				"ratioAge60": {
+					"type": "string"
+				},
+				"salesNearestWarehousesRatio": {
+					"type": "string"
+				},
+				"storeId": {
+					"type": "string"
+				},
+				"salesNearest5StoresRatio": {
+					"type": "string"
+				},
+				"collegeRatio": {
+					"type": "string"
+				},
+				"avgDistanceNearest5Supermarkets": {
+					"type": "string"
+				},
+				"distanceNearestWarehouse": {
+					"type": "string"
+				}
+			}
+		},
+		"typeProperties": {
+			"collectionName": "StoreDemoGraphics"
+		}
+	},
+	"type": "Microsoft.Synapse/workspaces/datasets"
+}

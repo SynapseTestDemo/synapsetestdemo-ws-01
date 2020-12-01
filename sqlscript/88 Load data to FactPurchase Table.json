@@ -1,0 +1,16 @@
+{
+	"name": "88 Load data to FactPurchase Table",
+	"properties": {
+		"content": {
+			"query": "SET ANSI_NULLS ON\nGO\nSET QUOTED_IDENTIFIER ON\nGO\n\nDROP Table [wwi].[FactPurchase]\n\nCREATE TABLE [wwi].[FactPurchase]\n( \n\t[PurchaseKey] [bigint]  NOT NULL,\n\t[DateKey] [date]  NOT NULL,\n\t[SupplierKey] [int]  NOT NULL,\n\t[StockItemKey] [int]  NOT NULL,\n\t[WWIPurchaseOrderID] [int]  NULL,\n\t[OrderedOuters] [int]  NOT NULL,\n\t[OrderedQuantity] [int]  NOT NULL,\n\t[ReceivedOuters] [int]  NOT NULL,\n\t[Package] [nvarchar](50)  NOT NULL,\n\t[IsOrderFinalized] [nvarchar](5)  NOT NULL,\n\t[LineageKey] [int]  NOT NULL\n)\nWITH\n(\n\tDISTRIBUTION = HASH ( [SupplierKey] ),\n\tCLUSTERED COLUMNSTORE INDEX\n)\nGO\n\n\nCOPY INTO wwi.FactPurchase\n(PurchaseKey 1, DateKey 2, SupplierKey 3, StockItemKey 4, WWIPurchaseOrderID 5, OrderedOuters 6, OrderedQuantity 7, ReceivedOuters 8, Package 9, IsOrderFinalized 10, LineageKey 11)\nFROM 'https://synapsedemos.dfs.core.windows.net/rawdata/WWI/wwi-factpurchase.csv'\nWITH\n(\n\tFILE_TYPE = 'CSV'\n\t,MAXERRORS = 0\n\t,FIELDQUOTE = '\"'\n\t,FIELDTERMINATOR = '|'\n\t,FIRSTROW = 2\n\t,ERRORFILE = 'https://synapsedemos.dfs.core.windows.net/rawdata/'\n\t,IDENTITY_INSERT = 'OFF'\n)\n--END\nGO\n\nSELECT TOP 100 * FROM wwi.FactPurchase\nGO",
+			"metadata": {
+				"language": "sql"
+			},
+			"currentConnection": {
+				"name": "SQLPool01",
+				"type": "SqlPool"
+			}
+		},
+		"type": "SqlQuery"
+	}
+}

@@ -1,0 +1,70 @@
+{
+	"name": "99 Sample Notebook Codes",
+	"properties": {
+		"nbformat": 4,
+		"nbformat_minor": 2,
+		"bigDataPool": {
+			"referenceName": "Spark1",
+			"type": "BigDataPoolReference"
+		},
+		"sessionProperties": {
+			"driverMemory": "28g",
+			"driverCores": 4,
+			"executorMemory": "28g",
+			"executorCores": 4,
+			"numExecutors": 2
+		},
+		"metadata": {
+			"language_info": {
+				"name": "python"
+			},
+			"a365ComputeOptions": {
+				"id": "/subscriptions/58f8824d-32b0-4825-9825-02fa6a801546/resourceGroups/prlangadrg/providers/Microsoft.Synapse/workspaces/synapsedemosws/bigDataPools/Spark1",
+				"name": "Spark1",
+				"type": "Spark",
+				"endpoint": "https://synapsedemosws.dev.azuresynapse.net/livyApi/versions/2019-11-01-preview/sparkPools/Spark1",
+				"auth": {
+					"type": "AAD",
+					"authResource": "https://dev.azuresynapse.net"
+				},
+				"sparkVersion": "2.4",
+				"nodeCount": 3,
+				"cores": 4,
+				"memory": 28
+			}
+		},
+		"cells": [
+			{
+				"cell_type": "markdown",
+				"source": [
+					"## To get list of installed packages\n",
+					""
+				]
+			},
+			{
+				"cell_type": "code",
+				"source": [
+					"import pip #needed to use the pip functions\n",
+					"for i in pip.get_installed_distributions(local_only=True):\n",
+					"    print(i)"
+				],
+				"execution_count": 3
+			},
+			{
+				"cell_type": "markdown",
+				"source": [
+					"## Import these libraries to convert model in onnx format\n",
+					""
+				]
+			},
+			{
+				"cell_type": "code",
+				"source": [
+					"from onnxmltools import convert_sparkml\n",
+					"from onnxmltools.convert.sparkml.utils import buildInitialTypesSimple"
+				],
+				"execution_count": 8
+			}
+		]
+	}
+}

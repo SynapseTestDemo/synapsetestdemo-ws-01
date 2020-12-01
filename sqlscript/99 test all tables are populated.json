@@ -1,0 +1,16 @@
+{
+	"name": "99 test all tables are populated",
+	"properties": {
+		"content": {
+			"query": "SELECT TOP (100) * FROM [wwi].[DimCity]; --empty table\n\nSELECT TOP (100) * FROM [wwi].DimCustomer\n\nSELECT TOP (100) * FROM [wwi].DimDate\n\nSELECT TOP (100) * FROM [wwi].DimEmployee\n\nSELECT TOP (100) * FROM [wwi].DimPaymentMethod\n\nSELECT TOP (100) * FROM [wwi].DimStockItem\n\nSELECT TOP (100) * FROM [wwi].DimSupplier\n\nSELECT TOP (100) * FROM [wwi].DimTransactionType\n\nSELECT TOP (100) * FROM [wwi].FactMovement\n\nSELECT TOP (100) * FROM [wwi].FactOrder\n\nSELECT TOP (100) * FROM wwi.FactPurchase\n\nSELECT TOP (100) * FROM wwi.FactSale\n\nSELECT TOP (100) * FROM wwi.FactStockHolding\n\nSELECT TOP (100) * FROM wwi.FactTransaction\n\n",
+			"metadata": {
+				"language": "sql"
+			},
+			"currentConnection": {
+				"name": "SQLPool01",
+				"type": "SqlPool"
+			}
+		},
+		"type": "SqlQuery"
+	}
+}

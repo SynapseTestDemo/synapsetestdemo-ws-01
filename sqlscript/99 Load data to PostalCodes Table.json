@@ -1,0 +1,16 @@
+{
+	"name": "99 Load data to PostalCodes Table",
+	"properties": {
+		"content": {
+			"query": "DROP TABLE wwi.PostalCodes\nIF NOT EXISTS (SELECT * FROM sys.objects WHERE NAME = 'PostalCodes' AND TYPE = 'U')\nCREATE TABLE wwi.PostalCodes\n\t(\n\t City nvarchar(30),\n\t [State] nvarchar(30),\n\t Zip nvarchar(10),\n\t Latitude nvarchar(10),\n\t Longitude nvarchar(10),\n\t Timezone nvarchar(2)\n\t)\nWITH\n\t(\n\tDISTRIBUTION = ROUND_ROBIN,\n\t CLUSTERED COLUMNSTORE INDEX\n\t -- HEAP\n\t)\nGO\n\n--Uncomment the 4 lines below to create a stored procedure for data pipeline orchestration​                 \n--CREATE PROC bulk_load_PostalCodes\n--AS\n--BEGIN\nCOPY INTO wwi.PostalCodes\n(City 1, [State] 2, Zip 3, Latitude 4, Longitude 5, Timezone 6)\nFROM 'https://synapsedemos.dfs.core.windows.net/rawdata/WWI/postalcodes.csv'\nWITH\n(\n\tFILE_TYPE = 'CSV'\n\t,MAXERRORS = 0\n\t,FIELDQUOTE = '\"'\n\t,FIELDTERMINATOR = ','\n\t,ERRORFILE = 'https://synapsedemos.dfs.core.windows.net/rawdata/'\n\t,IDENTITY_INSERT = 'OFF'\n)\n--END\nGO\n\nSELECT TOP 100 * FROM wwi.PostalCodes\nGO",
+			"metadata": {
+				"language": "sql"
+			},
+			"currentConnection": {
+				"name": "SQLPool01",
+				"type": "SqlPool"
+			}
+		},
+		"type": "SqlQuery"
+	}
+}

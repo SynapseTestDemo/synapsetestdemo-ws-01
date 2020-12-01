@@ -1,0 +1,16 @@
+{
+	"name": "SQL script 2",
+	"properties": {
+		"content": {
+			"query": "-- type your sql script here, we now have intellisense\n\nCREATE USER [lipeng@microsoft.com] FROM EXTERNAL PROVIDER;\nEXEC sp_addrolemember 'db_owner', 'lipeng@microsoft.com';",
+			"metadata": {
+				"language": "sql"
+			},
+			"currentConnection": {
+				"name": "SQLDB1",
+				"type": "SqlPool"
+			}
+		},
+		"type": "SqlQuery"
+	}
+}

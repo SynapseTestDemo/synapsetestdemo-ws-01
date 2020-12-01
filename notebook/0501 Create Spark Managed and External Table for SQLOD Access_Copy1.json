@@ -1,0 +1,348 @@
+{
+	"name": "0501 Create Spark Managed and External Table for SQLOD Access_Copy1",
+	"properties": {
+		"nbformat": 4,
+		"nbformat_minor": 2,
+		"bigDataPool": {
+			"referenceName": "Spark1",
+			"type": "BigDataPoolReference"
+		},
+		"sessionProperties": {
+			"driverMemory": "28g",
+			"driverCores": 4,
+			"executorMemory": "28g",
+			"executorCores": 4,
+			"numExecutors": 2
+		},
+		"metadata": {
+			"kernelspec": {
+				"name": "synapse_pyspark",
+				"display_name": "Synapse PySpark"
+			},
+			"language_info": {
+				"name": "sql"
+			},
+			"a365ComputeOptions": {
+				"id": "/subscriptions/58f8824d-32b0-4825-9825-02fa6a801546/resourceGroups/prlangadrg/providers/Microsoft.Synapse/workspaces/synapsedemosws/bigDataPools/Spark1",
+				"name": "Spark1",
+				"type": "Spark",
+				"endpoint": "https://synapsedemosws.dev.azuresynapse.net/livyApi/versions/2019-11-01-preview/sparkPools/Spark1",
+				"auth": {
+					"type": "AAD",
+					"authResource": "https://dev.azuresynapse.net"
+				},
+				"sparkVersion": "2.4",
+				"nodeCount": 3,
+				"cores": 4,
+				"memory": 28
+			}
+		},
+		"cells": [
+			{
+				"cell_type": "markdown",
+				"source": [
+					"## Create a managed table backed by Parquet in Spark\n",
+					""
+				],
+				"attachments": null
+			},
+			{
+				"cell_type": "code",
+				"metadata": {
+					"microsoft": {
+						"language": "sql"
+					},
+					"diagram": {
+						"activateDiagramType": 1,
+						"chartConfig": {
+							"category": "bar",
+							"keys": [],
+							"values": [],
+							"yLabel": "",
+							"xLabel": "",
+							"aggregation": "SUM",
+							"aggByBackend": false
+						},
+						"isSummary": false,
+						"previewData": {
+							"filter": null
+						},
+						"isSql": true
+					}
+				},
+				"source": [
+					"%%sql\n",
+					"CREATE DATABASE IF NOT EXISTS sparkdb1"
+				],
+				"attachments": null,
+				"execution_count": 7
+			},
+			{
+				"cell_type": "code",
+				"metadata": {
+					"diagram": {
+						"activateDiagramType": 1,
+						"chartConfig": {
+							"category": "bar",
+							"keys": [],
+							"values": [],
+							"yLabel": "",
+							"xLabel": "",
+							"aggregation": "SUM",
+							"aggByBackend": false
+						},
+						"isSummary": false,
+						"previewData": {
+							"filter": null
+						},
+						"isSql": true
+					}
+				},
+				"source": [
+					"CREATE TABLE sparkdb1.employee(id int, fname string, lname string, org string, joiningdate date) using Parquet"
+				],
+				"attachments": null,
+				"execution_count": 20
+			},
+			{
+				"cell_type": "markdown",
+				"source": [
+					"## Insert values in Spark Table\n",
+					""
+				],
+				"attachments": null
+			},
+			{
+				"cell_type": "code",
+				"metadata": {
+					"microsoft": {
+						"language": "csharp"
+					}
+				},
+				"source": [
+					"%%csharp\n",
+					"\n",
+					"using Microsoft.Spark.Sql.Types;\n",
+					"\n",
+					"var data = new List<GenericRow>();\n",
+					"\n",
+					"data.Add(new GenericRow(new object[] { 1, \"Alice\", \"Volter\", \"Sales\", new Date(2010, 1, 1)}));\n",
+					"data.Add(new GenericRow(new object[] { 2, \"Ryan\", \"Peter\", \"Engineering\", new Date(2011, 1, 1)}));\n",
+					"data.Add(new GenericRow(new object[] { 3, \"Stephen\", \"Stroke\", \"Marketing\", new Date(2012, 1, 1)}));\n",
+					"data.Add(new GenericRow(new object[] { 4, \"Stacy\", \"Lord\", \"Sales\", new Date(2013, 1, 1)}));\n",
+					"data.Add(new GenericRow(new object[] { 5, \"George\", \"Longbottom\", \"Sales\", new Date(2010, 1, 1)}));\n",
+					"data.Add(new GenericRow(new object[] { 6, \"Harry\", \"Yu\", \"Marketing\", new Date(2014, 1, 1)}));\n",
+					"data.Add(new GenericRow(new object[] { 7, \"Henri\", \"Peng\", \"Sales\", new Date(2012, 1, 1)}));\n",
+					"data.Add(new GenericRow(new object[] { 8, \"Mike\", \"Bread\", \"Marketing\", new Date(2015, 1, 1)}));\n",
+					"data.Add(new GenericRow(new object[] { 9, \"Michael\", \"Peter\", \"Sales\", new Date(2011, 1, 1)}));\n",
+					"data.Add(new GenericRow(new object[] { 10, \"Firoz\", \"BA\", \"Engineering\", new Date(2013, 1, 1)}));\n",
+					"data.Add(new GenericRow(new object[] { 11, \"Robin\", \"Caplan\", \"Sales\", new Date(2010, 1, 1)}));\n",
+					"data.Add(new GenericRow(new object[] { 12, \"Cass\", \"Thompson\", \"Sales\", new Date(2010, 1, 1)}));\n",
+					"data.Add(new GenericRow(new object[] { 13, \"Bob\", \"Thompson\", \"Engineering\", new Date(2017, 1, 1)}));\n",
+					"\n",
+					"var schema = new StructType\n",
+					"    (new List<StructField>()\n",
+					"        {\n",
+					"            new StructField(\"id\", new IntegerType()),\n",
+					"            new StructField(\"fname\", new StringType()),\n",
+					"            new StructField(\"lname\", new StringType()),\n",
+					"            new StructField(\"org\", new StringType()),\n",
+					"            new StructField(\"joiningdate\", new DateType())\n",
+					"        }\n",
+					"    );\n",
+					"\n",
+					"var df = spark.CreateDataFrame(data, schema);\n",
+					"df.Write().Mode(SaveMode.Append).InsertInto(\"sparkdb1.employee\");"
+				],
+				"attachments": null,
+				"execution_count": 21
+			},
+			{
+				"cell_type": "markdown",
+				"source": [
+					"## Read Data from Spark managed table\n",
+					""
+				],
+				"attachments": null
+			},
+			{
+				"cell_type": "code",
+				"metadata": {
+					"microsoft": {
+						"language": "sql"
+					},
+					"diagram": {
+						"activateDiagramType": 1,
+						"chartConfig": {
+							"category": "bar",
+							"keys": [
+								"fname"
+							],
+							"values": [
+								"id"
+							],
+							"yLabel": "id",
+							"xLabel": "fname",
+							"aggregation": "SUM",
+							"aggByBackend": false
+						},
+						"aggData": {
+							"id": "{\r\n  \"Alice\": 1,\r\n  \"Bob\": 13,\r\n  \"Cass\": 12,\r\n  \"Firoz\": 10,\r\n  \"George\": 5,\r\n  \"Harry\": 6,\r\n  \"Henri\": 7,\r\n  \"Michael\": 9,\r\n  \"Mike\": 8,\r\n  \"Robin\": 11,\r\n  \"Ryan\": 2,\r\n  \"Stacy\": 4,\r\n  \"Stephen\": 3\r\n}"
+						},
+						"isSummary": false,
+						"previewData": {
+							"filter": null
+						},
+						"isSql": true
+					}
+				},
+				"source": [
+					"%%sql\n",
+					"select * from sparkdb1.employee"
+				],
+				"attachments": null,
+				"execution_count": 22
+			},
+			{
+				"cell_type": "markdown",
+				"source": [
+					"## Create an external table backed by Parquet in Spark\n",
+					""
+				],
+				"attachments": null
+			},
+			{
+				"cell_type": "code",
+				"metadata": {
+					"microsoft": {
+						"language": "python"
+					}
+				},
+				"source": [
+					"%%pyspark\n",
+					"data_path = spark.read.load('abfss://rawdata@synapsedemos.dfs.core.windows.net/Spark External Table Data Parquet/OrgData.csv', format='csv'\n",
+					", header=True\n",
+					")\n",
+					"data_path.show(100)"
+				],
+				"attachments": null,
+				"execution_count": 29
+			},
+			{
+				"cell_type": "code",
+				"metadata": {
+					"microsoft": {
+						"language": "python"
+					}
+				},
+				"source": [
+					"%%pyspark\n",
+					"storage_path_parquet = f'abfss://rawdata@synapsedemos.dfs.core.windows.net/Spark External Table Data Parquet/'\n",
+					"\n",
+					"data_path.write.mode(\"Append\").parquet(storage_path_parquet)"
+				],
+				"attachments": null,
+				"execution_count": 32
+			},
+			{
+				"cell_type": "code",
+				"metadata": {
+					"microsoft": {
+						"language": "sql"
+					},
+					"diagram": {
+						"activateDiagramType": 1,
+						"chartConfig": {
+							"category": "bar",
+							"keys": [],
+							"values": [],
+							"yLabel": "",
+							"xLabel": "",
+							"aggregation": "SUM",
+							"aggByBackend": false
+						},
+						"isSummary": false,
+						"previewData": {
+							"filter": null
+						},
+						"isSql": true
+					}
+				},
+				"source": [
+					"%%sql\n",
+					"Create Table sparkdb1.externalorgdetails\n",
+					"    using Parquet\n",
+					"    Location \"abfss://rawdata@synapsedemos.dfs.core.windows.net/Spark External Table Data Parquet/part-00000-779dbd3c-9207-4e99-84bf-2cae3e275678-c000.snappy.parquet\""
+				],
+				"attachments": null,
+				"execution_count": 35
+			},
+			{
+				"cell_type": "markdown",
+				"source": [
+					"## Read data from Spark external table\n",
+					""
+				],
+				"attachments": null
+			},
+			{
+				"cell_type": "code",
+				"metadata": {
+					"diagram": {
+						"activateDiagramType": 1,
+						"chartConfig": {
+							"category": "bar",
+							"keys": [
+								"OrgId"
+							],
+							"values": [
+								"OrgId"
+							],
+							"yLabel": "OrgId",
+							"xLabel": "OrgId",
+							"aggregation": "COUNT",
+							"aggByBackend": false
+						},
+						"aggData": {
+							"OrgId": {
+								"1": 1,
+								"2": 1,
+								"3": 1
+							}
+						},
+						"isSummary": false,
+						"previewData": {
+							"filter": null
+						},
+						"isSql": true
+					}
+				},
+				"source": [
+					"select * from sparkdb1.externalorgdetails"
+				],
+				"attachments": null,
+				"execution_count": null
+			},
+			{
+				"cell_type": "code",
+				"metadata": {
+					"jupyter": {
+						"source_hidden": false,
+						"outputs_hidden": false
+					},
+					"nteract": {
+						"transient": {
+							"deleting": false
+						}
+					},
+					"collapsed": true
+				},
+				"source": [
+					"SELECT GETDATE()"
+				],
+				"attachments": null,
+				"execution_count": null
+			}
+		]
+	}
+}

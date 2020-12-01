@@ -1,0 +1,16 @@
+{
+	"name": "04 SQL Serverless StoreSales CosmosDB",
+	"properties": {
+		"content": {
+			"query": "-- Explore data from CosmosDB RetailSales container\n\nSELECT \n    *\nFROM OPENROWSET(\n            'CosmosDB'\n            ,'account=cosmosdbsynapseaccount;database=RetailSalesDemoDB;key=2cAAmr4JVyCqSzL4qnWPnGrcK8ZyrCK6TBzo3Pblx2vLHxHvaf9RjZxcZg6c9rojmcaSyOVpp3aifPLxZwim4Q==;region='\n            ,[RetailSales]\n    )\n    WITH (\n        [logQuantity] varchar (30),\n        [productCode] varchar (30),\n        [quantity] varchar (30),\n        [price] varchar (30),\n        [advertising] varchar (30),\n        [id] varchar (100),\n        [storeId] varchar (30),\n        [weekStarting] varchar (30)\n    ) As StoreDetails\nORDER BY productCode, WeekStarting",
+			"metadata": {
+				"language": "sql"
+			},
+			"currentConnection": {
+				"name": "master",
+				"type": "SqlOnDemand"
+			}
+		},
+		"type": "SqlQuery"
+	}
+}

@@ -1,0 +1,502 @@
+{
+	"name": "03 Train Auto ML Model_Qlik demo ws",
+	"properties": {
+		"nbformat": 4,
+		"nbformat_minor": 2,
+		"bigDataPool": {
+			"referenceName": "Spark1",
+			"type": "BigDataPoolReference"
+		},
+		"sessionProperties": {
+			"driverMemory": "28g",
+			"driverCores": 4,
+			"executorMemory": "28g",
+			"executorCores": 4,
+			"numExecutors": 2
+		},
+		"metadata": {
+			"language_info": {
+				"name": "python"
+			},
+			"a365ComputeOptions": {
+				"id": "/subscriptions/58f8824d-32b0-4825-9825-02fa6a801546/resourceGroups/prlangadrg/providers/Microsoft.Synapse/workspaces/synapsedemosws/bigDataPools/Spark1",
+				"name": "Spark1",
+				"type": "Spark",
+				"endpoint": "https://synapsedemosws.dev.azuresynapse.net/livyApi/versions/2019-11-01-preview/sparkPools/Spark1",
+				"auth": {
+					"type": "AAD",
+					"authResource": "https://dev.azuresynapse.net"
+				},
+				"sparkVersion": "2.4",
+				"nodeCount": 3,
+				"cores": 4,
+				"memory": 28
+			}
+		},
+		"cells": [
+			{
+				"cell_type": "code",
+				"source": [
+					"import azureml.core\n",
+					"import pandas as pd\n",
+					"import numpy as np\n",
+					"import logging\n",
+					"from azureml.core.workspace import Workspace\n",
+					"from azureml.core import Workspace\n",
+					"from azureml.core.experiment import Experiment\n",
+					"from azureml.train.automl import AutoMLConfig\n",
+					"import os\n",
+					"\n",
+					"subscription_id = os.getenv(\"SUBSCRIPTION_ID\", default=\"0bf50ed4-206d-4b8c-863c-6d99286aab75\")\n",
+					"resource_group = os.getenv(\"RESOURCE_GROUP\", default=\"synapseqlik\")\n",
+					"workspace_name = os.getenv(\"WORKSPACE_NAME\", default=\"synapsesapml\")\n",
+					"workspace_region = os.getenv(\"WORKSPACE_REGION\", default=\"West US 2\")\n",
+					"\n",
+					"ws = Workspace(subscription_id = subscription_id, resource_group = resource_group, workspace_name = workspace_name)\n",
+					"ws.write_config()"
+				],
+				"execution_count": 5
+			},
+			{
+				"cell_type": "markdown",
+				"source": [
+					"## Read data from SQL pool\n",
+					""
+				]
+			},
+			{
+				"cell_type": "code",
+				"source": [
+					"%%spark\n",
+					"import com.microsoft.spark.sqlanalytics.utils.Constants\n",
+					"import org.apache.spark.sql.SqlAnalyticsConnector._\n",
+					"val df = spark.read.sqlanalytics(\"SAP.o2c_dm2.MaterialsOrders\") \n",
+					"df.registerTempTable( \"materialdataframetable\" )"
+				],
+				"execution_count": 7
+			},
+			{
+				"cell_type": "code",
+				"metadata": {
+					"diagram": {
+						"activateDiagramType": 1,
+						"chartConfig": {
+							"category": "bar",
+							"keys": [
+								"makt_MATNR"
+							],
+							"values": [
+								"MaterialAttrOID"
+							],
+							"yLabel": "MaterialAttrOID",
+							"xLabel": "makt_MATNR",
+							"aggregation": "SUM",
+							"aggByBackend": false
+						},
+						"aggData": {
+							"MaterialAttrOID": {
+								"2": 8056,
+								"5": 12617,
+								"8": 35976,
+								"10": 31590,
+								"16": 13777
+							}
+						},
+						"isSummary": false,
+						"previewData": {
+							"filter": null
+						},
+						"isSql": true
+					}
+				},
+				"source": [
+					"%%sql\n",
+					"SELECT * FROM materialdataframetable Limit 5"
+				],
+				"execution_count": 32
+			},
+			{
+				"cell_type": "code",
+				"source": [
+					"%%pyspark\n",
+					"data_path = spark.sql(\"SELECT * FROM materialdataframetable\")"
+				],
+				"execution_count": 9
+			},
+			{
+				"cell_type": "code",
+				"source": [
+					"data = data_path.select(\"*\").toPandas()\n",
+					"data.dtypes"
+				],
+				"execution_count": 10
+			},
+			{
+				"cell_type": "code",
+				"source": [
+					"cols=data.columns\n",
+					"data[cols] = data[cols].apply(pd.to_numeric, errors='coerce')\n",
+					"data.dtypes"
+				],
+				"execution_count": 11
+			},
+			{
+				"cell_type": "code",
+				"metadata": {
+					"diagram": {
+						"activateDiagramType": 1,
+						"chartConfig": {
+							"category": "bar",
+							"keys": [
+								"0MATERIAL_ATTR_OID"
+							],
+							"values": [
+								"0MATERIAL_ATTR_OID"
+							],
+							"yLabel": "0MATERIAL_ATTR_OID",
+							"xLabel": "0MATERIAL_ATTR_OID",
+							"aggregation": "COUNT",
+							"aggByBackend": false
+						},
+						"aggData": {
+							"0MATERIAL_ATTR_OID": {
+								"8056": 2,
+								"9803": 2,
+								"11671": 3,
+								"12095": 1,
+								"12260": 1,
+								"12364": 1,
+								"12424": 1,
+								"12472": 1,
+								"12556": 1,
+								"12592": 1,
+								"12616": 1,
+								"12617": 3,
+								"12669": 1,
+								"12676": 1,
+								"12710": 1,
+								"12727": 3,
+								"12729": 1,
+								"12830": 1,
+								"12951": 1,
+								"13023": 1,
+								"13308": 1,
+								"13317": 1,
+								"13437": 1,
+								"13717": 1,
+								"13724": 1,
+								"13777": 1,
+								"13807": 1,
+								"13837": 1,
+								"13897": 1,
+								"13907": 1,
+								"13966": 1,
+								"14027": 1,
+								"14066": 1,
+								"14322": 1,
+								"14651": 1,
+								"14669": 1,
+								"14695": 1,
+								"14789": 1,
+								"15084": 1,
+								"15109": 1,
+								"15169": 1,
+								"15229": 1,
+								"15289": 1,
+								"15349": 1,
+								"28410": 2,
+								"31590": 3,
+								"33510": 1,
+								"33604": 3,
+								"34225": 1,
+								"34259": 1,
+								"34285": 1,
+								"34527": 3,
+								"35404": 1,
+								"35464": 1,
+								"35590": 1,
+								"35897": 1,
+								"35957": 1,
+								"35976": 3,
+								"36307": 1,
+								"36567": 1,
+								"36635": 1,
+								"37236": 1,
+								"37703": 1,
+								"37763": 1,
+								"38774": 1,
+								"38834": 1,
+								"38894": 1,
+								"42556": 1,
+								"51768": 3,
+								"60970": 1,
+								"83776": 1
+							}
+						},
+						"isSummary": false,
+						"previewData": {
+							"filter": null
+						},
+						"isSql": false
+					}
+				},
+				"source": [
+					"data.head(10)"
+				],
+				"execution_count": 12
+			},
+			{
+				"cell_type": "code",
+				"source": [
+					"# shape of dataset \n",
+					"print(\"Shape:\", data.shape) \n",
+					"  \n",
+					"# column names \n",
+					"print(\"\\nFeatures:\", data.columns) \n",
+					"  \n",
+					"# storing the feature matrix (X) and response vector (y) \n",
+					"X = data[data.columns[:-1]] \n",
+					"y = data[data.columns[-1]] \n",
+					"  \n",
+					"# printing first 5 rows of feature matrix \n",
+					"print(\"\\nFeature matrix:\\n\", X.head()) \n",
+					"  \n",
+					"# printing first 5 values of response vector \n",
+					"print(\"\\nResponse vector:\\n\", y.head())"
+				],
+				"execution_count": 13
+			},
+			{
+				"cell_type": "code",
+				"source": [
+					"print(X.head(5))\n",
+					"print(X.dtypes)"
+				],
+				"execution_count": 15
+			},
+			{
+				"cell_type": "code",
+				"source": [
+					"print(y.head(5))\n",
+					"print(y.dtypes)"
+				],
+				"execution_count": 16
+			},
+			{
+				"cell_type": "markdown",
+				"source": [
+					"## Split data into train and test\n",
+					""
+				]
+			},
+			{
+				"cell_type": "code",
+				"source": [
+					"from sklearn.model_selection import train_test_split\n",
+					"\n",
+					"y_df = pd.to_numeric(y)\n",
+					"x_df = X\n",
+					"\n",
+					"x_train, x_test, y_train, y_test = train_test_split(x_df, y_df, test_size=0.2, random_state=223)"
+				],
+				"execution_count": 17
+			},
+			{
+				"cell_type": "code",
+				"metadata": {
+					"outputCollapsed": true,
+					"diagram": {
+						"activateDiagramType": 1,
+						"chartConfig": {
+							"category": "bar",
+							"keys": [
+								"makt_MATNR"
+							],
+							"values": [
+								"MaterialAttrOID"
+							],
+							"yLabel": "MaterialAttrOID",
+							"xLabel": "makt_MATNR",
+							"aggregation": "SUM",
+							"aggByBackend": false
+						},
+						"aggData": {
+							"MaterialAttrOID": {
+								"1": 19606,
+								"2": 16112,
+								"3": 28410,
+								"4": 34527,
+								"5": 37851,
+								"6": 25454,
+								"7": 23342,
+								"8": 71952,
+								"9": 155304,
+								"10": 94770,
+								"11": 67208,
+								"12": 15109,
+								"13": 13717,
+								"14": 15084,
+								"16": 13777,
+								"17": 12669,
+								"18": 12472,
+								"19": 14669,
+								"20": 60970,
+								"21": 36307,
+								"23": 34225,
+								"24": 13966,
+								"25": 36635,
+								"26": 12424,
+								"27": 35404,
+								"28": 42556,
+								"29": 12710,
+								"30": 13308,
+								"31": 12556,
+								"34": 14651,
+								"35": 33510,
+								"36": 38774,
+								"37": 12095,
+								"40": 13317,
+								"41": 13837,
+								"42": 12616,
+								"44": 37236,
+								"45": 35590,
+								"46": 13897,
+								"47": 14066,
+								"48": 38834,
+								"49": 14695,
+								"51": 38894,
+								"52": 37703,
+								"53": 15289,
+								"54": 13807,
+								"55": 37763,
+								"57": 14322,
+								"58": 12592,
+								"59": 34259,
+								"60": 13724,
+								"61": 14789,
+								"62": 12951,
+								"63": 13023,
+								"65": 34285,
+								"66": 35957,
+								"68": 83776,
+								"69": 14027,
+								"70": 12260,
+								"71": 12676
+							}
+						},
+						"isSummary": false,
+						"previewData": {
+							"filter": null
+						},
+						"isSql": false
+					}
+				},
+				"source": [
+					"display(x_train)"
+				],
+				"execution_count": 18
+			},
+			{
+				"cell_type": "markdown",
+				"source": [
+					"## Configure AutoML settings\n",
+					""
+				]
+			},
+			{
+				"cell_type": "code",
+				"source": [
+					"import logging\n",
+					"\n",
+					"automl_settings = {\n",
+					"    \"iteration_timeout_minutes\": 1,\n",
+					"    \"iterations\": 5,\n",
+					"    \"primary_metric\": 'spearman_correlation',    \n",
+					"    \"verbosity\": logging.INFO,\n",
+					"    \"n_cross_validations\": 5,\n",
+					"    \"featurization\": 'auto'\n",
+					"}"
+				],
+				"execution_count": 21
+			},
+			{
+				"cell_type": "code",
+				"source": [
+					"from azureml.train.automl import AutoMLConfig\n",
+					"\n",
+					"automl_config = AutoMLConfig(task='regression',\n",
+					"                             debug_log='automl_errors_5.log',\n",
+					"                             X=x_train,\n",
+					"                             y=y_train,\n",
+					"                             enable_onnx_compatible_models=True,\n",
+					"                             **automl_settings)"
+				],
+				"execution_count": 22
+			},
+			{
+				"cell_type": "markdown",
+				"source": [
+					"## Run the experiment with AutoML\n",
+					""
+				]
+			},
+			{
+				"cell_type": "code",
+				"source": [
+					"from azureml.core.experiment import Experiment\n",
+					"experiment = Experiment(ws, \"material-experiment5\")\n",
+					"local_run = experiment.submit(automl_config, show_output=True)"
+				],
+				"execution_count": 23
+			},
+			{
+				"cell_type": "markdown",
+				"source": [
+					"## Get the best model\n",
+					""
+				]
+			},
+			{
+				"cell_type": "code",
+				"source": [
+					"best_run, onnx_mdl = local_run.get_output(return_onnx_model=True) # retrieve the best onnx model\n",
+					"#best_run, fitted_model = local_run.get_output()"
+				],
+				"execution_count": 24
+			},
+			{
+				"cell_type": "code",
+				"source": [
+					"from azureml.automl.runtime.onnx_convert.onnx_converter import OnnxConverter\n",
+					"onnx_fl_path = \"./best_model6.onnx\"\n",
+					"OnnxConverter.save_onnx_model(onnx_mdl, onnx_fl_path)"
+				],
+				"execution_count": 25
+			},
+			{
+				"cell_type": "code",
+				"source": [
+					"with open(\"best_model6.onnx\", \"wb\") as f:\n",
+					"    f.write(onnx_mdl.SerializeToString())"
+				],
+				"execution_count": 26
+			},
+			{
+				"cell_type": "code",
+				"source": [
+					"from azure.storage.blob import BlobServiceClient\n",
+					"from azure.storage.blob import BlobClient\n",
+					"\n",
+					"connection_string = \"DefaultEndpointsProtocol=https;AccountName=synapseprimary;AccountKey=iSxMWJO5qVmUVLnV7YGDQMBr5meC/nZ+bTWdXfFSEcK2IEtDo6ygAkN7ve5LOn1NiOHDkMIh8PKTFjTKpIQCxA==;EndpointSuffix=core.windows.net\"\n",
+					"service = BlobServiceClient.from_connection_string(conn_str=connection_string)\n",
+					"\n",
+					"blob = BlobClient.from_connection_string(conn_str=connection_string, container_name=\"filesystem\", blob_name=\"Material/best_model6.onnx\")\n",
+					"\n",
+					"with open(\"./best_model6.onnx\", \"rb\") as data:\n",
+					"    blob.upload_blob(data,overwrite=True)"
+				],
+				"execution_count": 28
+			}
+		]
+	}
+}

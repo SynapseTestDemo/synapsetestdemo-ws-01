@@ -1,0 +1,16 @@
+{
+	"name": "88 Load data to FactOrder Table",
+	"properties": {
+		"content": {
+			"query": "SET ANSI_NULLS ON\nGO\nSET QUOTED_IDENTIFIER ON\nGO\n\nDROP TABLE [wwi].[FactOrder]\n\nCREATE TABLE [wwi].[FactOrder]\n( \n\t[OrderKey] [bigint]  NOT NULL,\n\t[CityKey] [int]  NOT NULL,\n\t[CustomerKey] [int]  NOT NULL,\n\t[StockItemKey] [int]  NOT NULL,\n\t[OrderDateKey] [date]  NOT NULL,\n\t[PickedDateKey] [date]  NULL,\n\t[SalespersonKey] [int]  NOT NULL,\n\t[PickerKey] [int]  NULL,\n\t[WWIOrderID] [int]  NOT NULL,\n\t[WWIBackorderID] [int]  NULL,\n\t[Description] [nvarchar](100)  NOT NULL,\n\t[Package] [nvarchar](50)  NOT NULL,\n\t[Quantity] [int]  NOT NULL,\n\t[UnitPrice] [decimal](18,2)  NOT NULL,\n\t[TaxRate] [decimal](18,3)  NOT NULL,\n\t[TotalExcludingTax] [decimal](18,2)  NOT NULL,\n\t[TaxAmount] [decimal](18,2)  NOT NULL,\n\t[TotalIncludingTax] [decimal](18,2)  NOT NULL,\n\t[LineageKey] [int]  NULL\n)\nWITH\n(\n\tDISTRIBUTION = HASH ( [CustomerKey] ),\n\tCLUSTERED COLUMNSTORE INDEX\n)\nGO\n\nCOPY INTO wwi.FactOrder\n(OrderKey 1, CityKey 2, CustomerKey 3, StockItemKey 4, OrderDateKey 5, PickedDateKey 6, SalespersonKey 7, PickerKey 8, WWIOrderID 9, WWIBackorderID 10, Description 11, Package 12, Quantity 13, UnitPrice 14, TaxRate 15, TotalExcludingTax 16, TaxAmount 17, TotalIncludingTax 18, LineageKey 19)\nFROM 'https://synapsedemos.dfs.core.windows.net/rawdata/WWI/wwi-factorder.csv'\nWITH\n(\n\tFILE_TYPE = 'CSV'\n\t,MAXERRORS = 0\n\t,FIELDQUOTE = '\"'\n\t,FIELDTERMINATOR = '|'\n\t,FIRSTROW = 3\n\t,ERRORFILE = 'https://synapsedemos.dfs.core.windows.net/rawdata/'\n\t,IDENTITY_INSERT = 'OFF'\n)\nGO\n\nSELECT TOP 100 * FROM wwi.FactOrder\nGO",
+			"metadata": {
+				"language": "sql"
+			},
+			"currentConnection": {
+				"name": "SQLPool01",
+				"type": "SqlPool"
+			}
+		},
+		"type": "SqlQuery"
+	}
+}

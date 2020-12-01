@@ -1,0 +1,16 @@
+{
+	"name": "SQL script 5",
+	"properties": {
+		"content": {
+			"query": "-- type your sql script here, we now have intellisense\n\n\ncreate user [lipeng@microsoft.com] from external provider\n\nexecute sp_addrolemember 'db_owner', 'prlangad@microsoft.com'\n\nGRANT SELECT ON security.CustomerPIIData TO [lipeng@microsoft.com]\n\n\nselect * from security.CustomerPIIData\n\n\nGRANT select ON SCHEMA :: security TO [lipeng@microsoft.com];  \n\n\n\nselect * from wwi.DimCity",
+			"metadata": {
+				"language": "sql"
+			},
+			"currentConnection": {
+				"name": "SQLPool01",
+				"type": "SqlPool"
+			}
+		},
+		"type": "SqlQuery"
+	}
+}

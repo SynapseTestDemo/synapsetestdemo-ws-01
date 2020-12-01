@@ -1,0 +1,16 @@
+{
+	"name": "88 Load data to FactTransaction Table",
+	"properties": {
+		"content": {
+			"query": "SET ANSI_NULLS ON\nGO\nSET QUOTED_IDENTIFIER ON\nGO\n\nDROP TABLE [wwi].[FactTransaction]\nGO\n\nCREATE TABLE [wwi].[FactTransaction]\n( \n\t[TransactionKey] [bigint]  NOT NULL,\n\t[DateKey] [date]  NOT NULL,\n\t[CustomerKey] [int]  NULL,\n\t[BillToCustomerKey] [int]  NULL,\n\t[SupplierKey] [int]  NULL,\n\t[TransactionTypeKey] [int]  NOT NULL,\n\t[PaymentMethodKey] [int]  NULL,\n\t[WWICustomerTransaction ID] [int]  NULL,\n\t[WWISupplierTransaction ID] [int]  NULL,\n\t[WWIInvoiceID] [int]  NULL,\n\t[WWIPurchaseOrderID] [int]  NULL,\n\t[SupplierInvoiceNumber] [nvarchar](20)  NULL,\n\t[TotalExcludingTax] [decimal](18,2)  NOT NULL,\n\t[TaxAmount] [decimal](18,2)  NOT NULL,\n\t[TotalIncludingTax] [decimal](18,2)  NOT NULL,\n\t[OutstandingBalance] [decimal](18,2)  NOT NULL,\n\t[IsFinalized] [nvarchar](5)  NOT NULL,\n\t[LineageKey] [int]  NOT NULL\n)\nWITH\n(\n\tDISTRIBUTION = HASH ( [CustomerKey] ),\n\tCLUSTERED COLUMNSTORE INDEX\n)\nGO\n\nCOPY INTO wwi.FactTransaction\n(TransactionKey 1, DateKey 2, CustomerKey 3, BillToCustomerKey 4, SupplierKey 5, TransactionTypeKey 6, PaymentMethodKey 7, [WWICustomerTransaction ID] 8, [WWISupplierTransaction ID] 9, WWIInvoiceID 10, WWIPurchaseOrderID 11, SupplierInvoiceNumber 12, TotalExcludingTax 13, TaxAmount 14, TotalIncludingTax 15, OutstandingBalance 16, IsFinalized 17, LineageKey 18)\nFROM 'https://synapsedemos.dfs.core.windows.net/rawdata/WWI/wwi-facttransaction.csv'\nWITH\n(\n\tFILE_TYPE = 'CSV'\n\t,MAXERRORS = 0\n\t,FIELDQUOTE = '\"'\n\t,FIELDTERMINATOR = '|'\n\t,FIRSTROW = 2\n\t,ERRORFILE = 'https://synapsedemos.dfs.core.windows.net/rawdata/'\n\t,IDENTITY_INSERT = 'OFF'\n)\n--END\nGO\n\nSELECT TOP 100 * FROM wwi.FactTransaction\nGO",
+			"metadata": {
+				"language": "sql"
+			},
+			"currentConnection": {
+				"name": "SQLPool01",
+				"type": "SqlPool"
+			}
+		},
+		"type": "SqlQuery"
+	}
+}

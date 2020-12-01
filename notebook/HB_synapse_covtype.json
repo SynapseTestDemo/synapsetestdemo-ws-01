@@ -1,0 +1,161 @@
+{
+	"name": "HB_synapse_covtype",
+	"properties": {
+		"nbformat": 4,
+		"nbformat_minor": 2,
+		"bigDataPool": {
+			"referenceName": "Spark1",
+			"type": "BigDataPoolReference"
+		},
+		"sessionProperties": {
+			"driverMemory": "28g",
+			"driverCores": 4,
+			"executorMemory": "28g",
+			"executorCores": 4,
+			"numExecutors": 2
+		},
+		"metadata": {
+			"language_info": {
+				"name": "python"
+			},
+			"a365ComputeOptions": {
+				"id": "/subscriptions/58f8824d-32b0-4825-9825-02fa6a801546/resourceGroups/prlangadrg/providers/Microsoft.Synapse/workspaces/synapsedemosws/bigDataPools/Spark1",
+				"name": "Spark1",
+				"type": "Spark",
+				"endpoint": "https://synapsedemosws.dev.azuresynapse.net/livyApi/versions/2019-11-01-preview/sparkPools/Spark1",
+				"auth": {
+					"type": "AAD",
+					"authResource": "https://dev.azuresynapse.net"
+				},
+				"sparkVersion": "2.4",
+				"nodeCount": 3,
+				"cores": 4,
+				"memory": 28,
+				"extraHeader": null
+			}
+		},
+		"cells": [
+			{
+				"cell_type": "markdown",
+				"source": [
+					"## Use Hummingbird to convert scikit-learn's RandomForestClassifier to Pytorch. \n",
+					"### See speedups on CPU only!  (no GPU required)\n",
+					""
+				]
+			},
+			{
+				"cell_type": "markdown",
+				"source": [
+					"## Working with the covtype dataset\n",
+					""
+				]
+			},
+			{
+				"cell_type": "code",
+				"source": [
+					"from sklearn.ensemble import RandomForestClassifier\n",
+					"from sklearn.datasets import fetch_covtype\n",
+					"import onnxruntime as ort"
+				],
+				"execution_count": 4
+			},
+			{
+				"cell_type": "markdown",
+				"source": [
+					"## Import the Hummingbird converter\n",
+					""
+				]
+			},
+			{
+				"cell_type": "code",
+				"source": [
+					"from hummingbird.ml import convert"
+				],
+				"execution_count": 5
+			},
+			{
+				"cell_type": "markdown",
+				"source": [
+					"## Create and fit the model"
+				]
+			},
+			{
+				"cell_type": "code",
+				"source": [
+					"import numpy as np\n",
+					"X, y = fetch_covtype(return_X_y=True)\n",
+					"X = np.array(X, dtype=np.float32)\n",
+					"#y = y % 2 # covtype is multiclass, keep it simple\n",
+					"skl_model = RandomForestClassifier(n_estimators=10, max_depth=3)\n",
+					"skl_model.fit(X, y)"
+				],
+				"execution_count": 6
+			},
+			{
+				"cell_type": "markdown",
+				"source": [
+					"## Convert the SKL model to Traditional ONNX (Trees) to run in Synapse\n",
+					""
+				]
+			},
+			{
+				"cell_type": "code",
+				"source": [
+					"from skl2onnx import convert_sklearn\n",
+					"from skl2onnx.common.data_types import FloatTensorType\n",
+					"initial_type = [('float_input', FloatTensorType([None, 54]))]\n",
+					"traditional_onnx = convert_sklearn(skl_model, initial_types=initial_type)"
+				],
+				"execution_count": 8
+			},
+			{
+				"cell_type": "markdown",
+				"source": [
+					"## Time the Converted Traditional ONNX model\n",
+					""
+				]
+			},
+			{
+				"cell_type": "code",
+				"source": [
+					"session = ort.InferenceSession(traditional_onnx.SerializeToString())\n",
+					"output_names = [session.get_outputs()[1].name]\n",
+					"inputs = {session.get_inputs()[0].name: X}\n",
+					"traditional_onnx_pred = session.run(output_names, inputs)"
+				],
+				"execution_count": 9
+			},
+			{
+				"cell_type": "markdown",
+				"source": [
+					"## Convert SKL model to ONNX (DNN) using Hummingbird!\n",
+					"\n",
+					""
+				]
+			},
+			{
+				"cell_type": "code",
+				"source": [
+					"model = convert(skl_model, 'onnx', X)"
+				],
+				"execution_count": 10
+			},
+			{
+				"cell_type": "markdown",
+				"source": [
+					"## Time the Convereted ONNX (DNN) made by Hummingbird\n",
+					"\n",
+					""
+				]
+			},
+			{
+				"cell_type": "code",
+				"source": [
+					"# Hummingbird will setup the onnx InferenceSession and handle all inputs\n",
+					"pred_cpu_hb = model.predict(X)"
+				],
+				"execution_count": 11
+			}
+		]
+	}
+}

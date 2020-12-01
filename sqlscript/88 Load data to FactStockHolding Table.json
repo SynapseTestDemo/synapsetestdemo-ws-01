@@ -1,0 +1,16 @@
+{
+	"name": "88 Load data to FactStockHolding Table",
+	"properties": {
+		"content": {
+			"query": "SET ANSI_NULLS ON\nGO\nSET QUOTED_IDENTIFIER ON\nGO\n\nDROP TABLE [wwi].[FactStockHolding]\n\nCREATE TABLE [wwi].[FactStockHolding]\n( \n\t[StockHoldingKey] [bigint]  NOT NULL,\n\t[StockItemKey] [int]  NOT NULL,\n\t[QuantityOnHand] [int]  NOT NULL,\n\t[BinLocation] [nvarchar](20)  NOT NULL,\n\t[LastStocktakeQuantity] [int]  NOT NULL,\n\t[LastCostPrice] [decimal](18,2)  NOT NULL,\n\t[ReorderLevel] [int]  NOT NULL,\n\t[TargetStockLevel] [int]  NOT NULL,\n\t[LineageKey] [int]  NOT NULL\n)\nWITH\n(\n\tDISTRIBUTION = HASH ( [StockItemKey] ),\n\tCLUSTERED COLUMNSTORE INDEX\n)\nGO\n\nCOPY INTO wwi.FactStockHolding\n(StockHoldingKey 1, StockItemKey 2, QuantityOnHand 3, BinLocation 4, LastStocktakeQuantity 5, LastCostPrice 6, ReorderLevel 7, TargetStockLevel 8, LineageKey 9)\nFROM 'https://synapsedemos.dfs.core.windows.net/rawdata/WWI/wwi-factstockholding.csv'\nWITH\n(\n\tFILE_TYPE = 'CSV'\n\t,MAXERRORS = 0\n\t,FIELDQUOTE = '\"'\n\t,FIELDTERMINATOR = '|'\n\t,FIRSTROW = 2\n\t,ERRORFILE = 'https://synapsedemos.dfs.core.windows.net/rawdata/'\n\t,IDENTITY_INSERT = 'OFF'\n)\n--END\nGO\n\nSELECT TOP 100 * FROM wwi.FactStockHolding\nGO",
+			"metadata": {
+				"language": "sql"
+			},
+			"currentConnection": {
+				"name": "SQLPool01",
+				"type": "SqlPool"
+			}
+		},
+		"type": "SqlQuery"
+	}
+}

@@ -1,0 +1,16 @@
+{
+	"name": "88 Load data to FactSale Table",
+	"properties": {
+		"content": {
+			"query": "SET ANSI_NULLS ON\nGO\nSET QUOTED_IDENTIFIER ON\nGO\n\nDROP TABLE [wwi].[FactSale]\n\nCREATE TABLE [wwi].[FactSale]\n( \n\t[SaleKey] [bigint]  NOT NULL,\n\t[CityKey] [int]  NOT NULL,\n\t[CustomerKey] [int]  NOT NULL,\n\t[BillToCustomerKey] [int]  NOT NULL,\n\t[StockItemKey] [int]  NOT NULL,\n\t[InvoiceDateKey] [date]  NOT NULL,\n\t[DeliveryDateKey] [date]  NULL,\n\t[SalespersonKey] [int]  NOT NULL,\n\t[WWIInvoiceID] [int]  NOT NULL,\n\t[Description] [nvarchar](100)  NOT NULL,\n\t[Package] [nvarchar](50)  NOT NULL,\n\t[Quantity] [int]  NOT NULL,\n\t[UnitPrice] [decimal](18,2)  NOT NULL,\n\t[TaxRate] [decimal](18,3)  NOT NULL,\n\t[TotalExcludingTax] [decimal](18,2)  NOT NULL,\n\t[TaxAmount] [decimal](18,2)  NOT NULL,\n\t[Profit] [decimal](18,2)  NOT NULL,\n\t[TotalIncludingTax] [decimal](18,2)  NOT NULL,\n\t[TotalDryItems] [int]  NOT NULL,\n\t[TotalChillerItems] [int]  NOT NULL,\n\t[LineageKey] [int]  NOT NULL\n)\nWITH\n(\n\tDISTRIBUTION = HASH ( [CustomerKey] ),\n\tCLUSTERED COLUMNSTORE INDEX\n)\nGO\n\nCOPY INTO wwi.FactSale\n(SaleKey 1, CityKey 2, CustomerKey 3, BillToCustomerKey 4, StockItemKey 5, InvoiceDateKey 6, DeliveryDateKey 7, SalespersonKey 8, WWIInvoiceID 9, Description 10, Package 11, Quantity 12, UnitPrice 13, TaxRate 14, TotalExcludingTax 15, TaxAmount 16, Profit 17, TotalIncludingTax 18, TotalDryItems 19, TotalChillerItems 20, LineageKey 21)\nFROM 'https://synapsedemos.dfs.core.windows.net/rawdata/WWI/wwi-factsale.csv'\nWITH\n(\n\tFILE_TYPE = 'CSV'\n\t,MAXERRORS = 0\n\t,FIELDQUOTE = '\"'\n\t,FIELDTERMINATOR = '|'\n\t,FIRSTROW = 2\n\t,ERRORFILE = 'https://synapsedemos.dfs.core.windows.net/rawdata/'\n\t,IDENTITY_INSERT = 'OFF'\n)\nGO\n\nSELECT TOP 100 * FROM wwi.FactSale\nGO",
+			"metadata": {
+				"language": "sql"
+			},
+			"currentConnection": {
+				"name": "SQLPool01",
+				"type": "SqlPool"
+			}
+		},
+		"type": "SqlQuery"
+	}
+}

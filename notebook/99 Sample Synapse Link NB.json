@@ -1,0 +1,273 @@
+{
+	"name": "99 Sample Synapse Link NB",
+	"properties": {
+		"nbformat": 4,
+		"nbformat_minor": 2,
+		"bigDataPool": {
+			"referenceName": "Spark1",
+			"type": "BigDataPoolReference"
+		},
+		"sessionProperties": {
+			"driverMemory": "28g",
+			"driverCores": 4,
+			"executorMemory": "28g",
+			"executorCores": 4,
+			"numExecutors": 2
+		},
+		"metadata": {
+			"language_info": {
+				"name": "python"
+			},
+			"a365ComputeOptions": {
+				"id": "/subscriptions/58f8824d-32b0-4825-9825-02fa6a801546/resourceGroups/prlangadrg/providers/Microsoft.Synapse/workspaces/synapsedemosws/bigDataPools/Spark1",
+				"name": "Spark1",
+				"type": "Spark",
+				"endpoint": "https://synapsedemosws.dev.azuresynapse.net/livyApi/versions/2019-11-01-preview/sparkPools/Spark1",
+				"auth": {
+					"type": "AAD",
+					"authResource": "https://dev.azuresynapse.net"
+				},
+				"sparkVersion": "2.4",
+				"nodeCount": 3,
+				"cores": 4,
+				"memory": 28
+			}
+		},
+		"cells": [
+			{
+				"cell_type": "code",
+				"metadata": {
+					"diagram": {
+						"activateDiagramType": 1,
+						"chartConfig": {
+							"category": "bar",
+							"keys": [],
+							"values": [],
+							"yLabel": "",
+							"xLabel": "",
+							"aggregation": "SUM",
+							"aggByBackend": false
+						},
+						"isSummary": false,
+						"previewData": {
+							"filter": null
+						},
+						"isSql": true
+					}
+				},
+				"source": [
+					"%%sql\n",
+					"\n",
+					"-- Create a Spark table over Cosmos DB analytical store\n",
+					"-- To select a preferred list of regions in a multi-region Cosmos DB account, add spark.cosmos.preferredRegions '<Region1>,<Region2>' in the config options\n",
+					"\n",
+					"create table CosmosDB001 using cosmos.olap options (\n",
+					"    spark.synapse.linkedService 'CosmosDb1',\n",
+					"    spark.cosmos.container 'sample-container-001'\n",
+					")"
+				],
+				"attachments": null,
+				"execution_count": 4
+			},
+			{
+				"cell_type": "code",
+				"metadata": {
+					"diagram": {
+						"activateDiagramType": 1,
+						"chartConfig": {
+							"category": "bar",
+							"keys": [
+								"_rid"
+							],
+							"values": [
+								"_ts"
+							],
+							"yLabel": "_ts",
+							"xLabel": "_rid",
+							"aggregation": "SUM",
+							"aggByBackend": false
+						},
+						"aggData": {
+							"_ts": {
+								"o9tdAL4WfHEDAAAAAAAAAA==": 1582307294,
+								"o9tdAL4WfHEFAAAAAAAAAA==": 1582307294,
+								"o9tdAL4WfHEGAAAAAAAAAA==": 1582307294,
+								"o9tdAL4WfHEHAAAAAAAAAA==": 1582307294,
+								"o9tdAL4WfHEIAAAAAAAAAA==": 1582307294,
+								"o9tdAL4WfHEJAAAAAAAAAA==": 1582307294,
+								"o9tdAL4WfHEKAAAAAAAAAA==": 1582307294,
+								"o9tdAL4WfHELAAAAAAAAAA==": 1582307294,
+								"o9tdAL4WfHEMAAAAAAAAAA==": 1582307294,
+								"o9tdAL4WfHENAAAAAAAAAA==": 1582307294
+							}
+						},
+						"isSummary": false,
+						"previewData": {
+							"filter": null
+						},
+						"isSql": true
+					}
+				},
+				"source": [
+					"%%sql\n",
+					"select * from cosmosdb001 limit 10"
+				],
+				"execution_count": 12
+			},
+			{
+				"cell_type": "code",
+				"metadata": {
+					"diagram": {
+						"activateDiagramType": 1,
+						"chartConfig": {
+							"category": "bar",
+							"keys": [
+								"_rid"
+							],
+							"values": [
+								"_ts"
+							],
+							"yLabel": "_ts",
+							"xLabel": "_rid",
+							"aggregation": "SUM",
+							"aggByBackend": false
+						},
+						"aggData": {
+							"_ts": {
+								"o9tdAL4WfHF0HwEAAAAAAA==": 1582311782,
+								"o9tdAL4WfHF1HwEAAAAAAA==": 1582311782,
+								"o9tdAL4WfHF2HwEAAAAAAA==": 1582311782,
+								"o9tdAL4WfHF3HwEAAAAAAA==": 1582311782,
+								"o9tdAL4WfHF4HwEAAAAAAA==": 1582311782,
+								"o9tdAL4WfHF5HwEAAAAAAA==": 1582311783,
+								"o9tdAL4WfHFwHwEAAAAAAA==": 1582311782,
+								"o9tdAL4WfHFxHwEAAAAAAA==": 1582311782,
+								"o9tdAL4WfHFyHwEAAAAAAA==": 1582311782,
+								"o9tdAL4WfHFzHwEAAAAAAA==": 1582311782
+							}
+						},
+						"isSummary": false,
+						"previewData": {
+							"filter": null
+						},
+						"isSql": false
+					}
+				},
+				"source": [
+					"%%pyspark\n",
+					"df = spark.sql(\"SELECT * FROM default.cosmosdb001\")\n",
+					"display(df.limit(10))"
+				],
+				"execution_count": 11
+			},
+			{
+				"cell_type": "code",
+				"metadata": {
+					"diagram": {
+						"activateDiagramType": 1,
+						"chartConfig": {
+							"category": "bar",
+							"keys": [],
+							"values": [],
+							"yLabel": "",
+							"xLabel": "",
+							"aggregation": "SUM",
+							"aggByBackend": false
+						},
+						"isSummary": false,
+						"previewData": {
+							"filter": null
+						},
+						"isSql": true
+					}
+				},
+				"source": [
+					"%%sql\n",
+					"\n",
+					"-- Create a Spark table over Cosmos DB analytical store\n",
+					"-- To select a preferred list of regions in a multi-region Cosmos DB account, add spark.cosmos.preferredRegions '<Region1>,<Region2>' in the config options\n",
+					"\n",
+					"create table CosmosDBPBIDemo using cosmos.olap options (\n",
+					"    spark.synapse.linkedService 'CosmosDb1',\n",
+					"    spark.cosmos.container 'PBIDemo'\n",
+					")"
+				],
+				"execution_count": 5
+			},
+			{
+				"cell_type": "code",
+				"metadata": {
+					"diagram": {
+						"activateDiagramType": 1,
+						"chartConfig": {
+							"category": "bar",
+							"keys": [],
+							"values": [],
+							"yLabel": "",
+							"xLabel": "",
+							"aggregation": "SUM",
+							"aggByBackend": false
+						},
+						"isSummary": false,
+						"previewData": {
+							"filter": null
+						},
+						"isSql": false
+					}
+				},
+				"source": [
+					"df = spark.read\\\n",
+					"    .format(\"cosmos.olap\")\\\n",
+					"    .option(\"spark.synapse.linkedService\", \"CosmosDb1\")\\\n",
+					"    .option(\"spark.cosmos.container\", \"sample-container-001\")\\\n",
+					"    .load()\n",
+					"\n",
+					"display(df.limit(10))"
+				],
+				"execution_count": 9
+			},
+			{
+				"cell_type": "code",
+				"metadata": {
+					"diagram": {
+						"activateDiagramType": 1,
+						"chartConfig": {
+							"category": "bar",
+							"keys": [
+								"_rid"
+							],
+							"values": [
+								"_ts"
+							],
+							"yLabel": "_ts",
+							"xLabel": "_rid",
+							"aggregation": "SUM",
+							"aggByBackend": false
+						},
+						"aggData": {
+							"_ts": {
+								"o9tdAJC5HiUBAAAAAAAAAA==": 1594876023,
+								"o9tdAJC5HiUCAAAAAAAAAA==": 1594876460
+							}
+						},
+						"isSummary": false,
+						"previewData": {
+							"filter": null
+						},
+						"isSql": false
+					}
+				},
+				"source": [
+					"df = spark.read\\\n",
+					"    .format(\"cosmos.olap\")\\\n",
+					"    .option(\"spark.synapse.linkedService\", \"CosmosDb1\")\\\n",
+					"    .option(\"spark.cosmos.container\", \"testarnaudschema\")\\\n",
+					"    .load()\n",
+					"\n",
+					"display(df.limit(10))"
+				],
+				"execution_count": 8
+			}
+		]
+	}
+}

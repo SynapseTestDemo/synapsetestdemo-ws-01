@@ -1,0 +1,32 @@
+{
+	"name": "Dataflow1",
+	"properties": {
+		"type": "MappingDataFlow",
+		"typeProperties": {
+			"sources": [
+				{
+					"dataset": {
+						"referenceName": "hrdatacsv_adls",
+						"type": "DatasetReference"
+					},
+					"name": "hrdatacsv"
+				}
+			],
+			"sinks": [
+				{
+					"linkedService": {
+						"referenceName": "synapsedemosws-WorkspaceDefaultStorage",
+						"type": "LinkedServiceReference"
+					},
+					"name": "hrdeltalake"
+				}
+			],
+			"transformations": [
+				{
+					"name": "DerivedColumnAge"
+				}
+			],
+			"script": "source(output(\n\t\tEmployee_Name as string,\n\t\tEmpID as string,\n\t\tMarriedID as string,\n\t\tDeptID as string,\n\t\tPayRate as string,\n\t\tPositionID as string,\n\t\tPosition as string,\n\t\tState as string,\n\t\tDOB as string,\n\t\tSex as string,\n\t\tDateofHire as string,\n\t\tDepartment as string\n\t),\n\tallowSchemaDrift: false,\n\tvalidateSchema: true,\n\tignoreNoFilesFound: false,\n\twildcardPaths:['HRData'],\n\tpartitionBy('hash', 6,\n\t\tDepartment\n\t)) ~> hrdatacsv\nhrdatacsv derive(Age = abs(year(currentDate(\"2020-06-30\"))-year(toDate(byName('DOB')))),\n\tpartitionBy('hash', 6,\n\t\tDepartment\n\t)) ~> DerivedColumnAge\nDerivedColumnAge sink(allowSchemaDrift: false,\n\tvalidateSchema: true,\n\tinput(\n\t\tEmployee_Name as string,\n\t\tEmpID as integer,\n\t\tMarriedID as boolean,\n\t\tDeptID as string,\n\t\tPayRate as string,\n\t\tPositionID as string,\n\t\tPosition as string,\n\t\tState as string,\n\t\tDOB as string,\n\t\tSex as string,\n\t\tDateofHire as date,\n\t\tDepartment as string,\n\t\tAge as integer\n\t),\n\tformat: 'delta',\n\tfileSystem: 'curateddata',\n\tfolderPath: 'HRDeltaLake',\n\ttruncate: true,\n\tmergeSchema: false,\n\tvacuum: 0,\n\tdeletable:false,\n\tinsertable:true,\n\tupdateable:false,\n\tupsertable:false,\n\tmapColumn(\n\t\tEmployee_Name,\n\t\tEmpID,\n\t\tMarriedID,\n\t\tDeptID,\n\t\tPayRate,\n\t\tPositionID,\n\t\tPosition,\n\t\tState,\n\t\tDOB,\n\t\tSex,\n\t\tDateofHire,\n\t\tDepartment,\n\t\tAge\n\t),\n\tpartitionBy('hash', 6,\n\t\tDepartment\n\t),\n\tskipDuplicateMapInputs: true,\n\tskipDuplicateMapOutputs: true) ~> hrdeltalake"
+		}
+	}
+}

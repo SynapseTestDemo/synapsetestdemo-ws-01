@@ -1,0 +1,16 @@
+{
+	"name": "88 Load data to DimCity Table",
+	"properties": {
+		"content": {
+			"query": "SET ANSI_NULLS ON\nGO\nSET QUOTED_IDENTIFIER ON\nGO\n\nDROP TABLE [wwi].[DimCity]\n\nCREATE TABLE [wwi].[DimCity]\n( \n\t[CityKey] [int]  NOT NULL,\n\t[WWICityID] [int]  NOT NULL,\n\t[City] [nvarchar](50)  NOT NULL,\n\t[StateProvince] [nvarchar](50)  NOT NULL,\n\t[Country] [nvarchar](60)  NOT NULL,\n\t[Continent] [nvarchar](30)  NOT NULL,\n\t[SalesTerritory] [nvarchar](50)  NOT NULL,\n\t[Region] [nvarchar](30)  NOT NULL,\n\t[Subregion] [nvarchar](30)  NOT NULL,\n\t[LatestRecordedPopulation] [bigint]  NOT NULL,\n\t[ValidFrom] [datetime2](7)  NOT NULL,\n\t[ValidTo] [datetime2](7)  NOT NULL,\n\t[LineageKey] [int]  NOT NULL\n)\nWITH\n(\n\tDISTRIBUTION = REPLICATE,\n\tCLUSTERED COLUMNSTORE INDEX\n)\nGO\n\nCOPY INTO wwi.DimCity\n(CityKey 1, WWICityID 2, City 3, StateProvince 4, Country 5, Continent 6, SalesTerritory 7, Region 8, Subregion 9, LatestRecordedPopulation 10, ValidFrom 11, ValidTo 12, LineageKey 13)\nFROM 'https://synapsedemos.dfs.core.windows.net/rawdata/WWI/wwi-dimcity.csv'\nWITH\n(\n\tFILE_TYPE = 'CSV'\n\t,MAXERRORS = 0\n\t,FIELDQUOTE = '\"'\n\t,FIELDTERMINATOR = '|'\n\t,FIRSTROW = 2\n\t,ERRORFILE = 'https://synapsedemos.dfs.core.windows.net/rawdata/'\n\t,IDENTITY_INSERT = 'OFF'\n)\n--END\nGO\n\nSELECT TOP 100 * FROM wwi.DimCity\nGO",
+			"metadata": {
+				"language": "sql"
+			},
+			"currentConnection": {
+				"name": "SQLPool01",
+				"type": "SqlPool"
+			}
+		},
+		"type": "SqlQuery"
+	}
+}

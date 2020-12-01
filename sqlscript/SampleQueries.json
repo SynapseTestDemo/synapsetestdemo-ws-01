@@ -1,0 +1,16 @@
+{
+	"name": "SampleQueries",
+	"properties": {
+		"content": {
+			"query": "/* Compute Summary Statistics over dataset */\n\n    SELECT b.Quartername,\n           COUNT(a.PickupTimeID) AS \"TotalTrips\",\n           SUM([TripDistanceMiles]) AS \"TotalMiles\",\n           SUM([PassengerCount]) AS \"TotalPassengers\",\n           AVG([FareAmount]) AS \"AvgFare\",\n           MAX([FareAmount]) AS \"MaxFare\"\n    FROM dbo.Trip a\n    LEFT JOIN dbo.Date b ON a.[DateID] = b.[DateID]\n    GROUP BY b.Quartername,\n             b.Quarter\n    ORDER BY b.Quarter\n    \n    \n    /* Windowing functions - Find top 3 cities per county in NY state having a min of 100 trips */\n    \n    SELECT c.*\n    FROM\n      (SELECT b.County,\n              b.city,\n              count(a.dateid) AS total_trips,\n              rank() OVER (PARTITION BY b.county\n                           ORDER BY count(a.dateid) DESC) AS rank\n       FROM dbo.Trip a\n       LEFT JOIN dbo.Geography b ON a.[PickupGeographyID] = b.[GeographyID]\n       WHERE State = 'NY'\n       GROUP BY b.County,\n                b.city) c\n    WHERE rank <=3\n      AND total_trips > 100\n    ORDER BY County,\n             City,\n             total_trips,\n             rank",
+			"metadata": {
+				"language": "sql"
+			},
+			"currentConnection": {
+				"name": "SQLDB1",
+				"type": "SqlPool"
+			}
+		},
+		"type": "SqlQuery"
+	}
+}

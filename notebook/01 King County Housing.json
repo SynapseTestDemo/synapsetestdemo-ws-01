@@ -1,0 +1,518 @@
+{
+	"name": "01 King County Housing",
+	"properties": {
+		"nbformat": 4,
+		"nbformat_minor": 2,
+		"bigDataPool": {
+			"referenceName": "Spark1",
+			"type": "BigDataPoolReference"
+		},
+		"sessionProperties": {
+			"driverMemory": "28g",
+			"driverCores": 4,
+			"executorMemory": "28g",
+			"executorCores": 4,
+			"numExecutors": 2
+		},
+		"metadata": {
+			"language_info": {
+				"name": "python"
+			},
+			"a365ComputeOptions": {
+				"id": "/subscriptions/58f8824d-32b0-4825-9825-02fa6a801546/resourceGroups/prlangadrg/providers/Microsoft.Synapse/workspaces/synapsedemosws/bigDataPools/Spark1",
+				"name": "Spark1",
+				"type": "Spark",
+				"endpoint": "https://synapsedemosws.dev.azuresynapse.net/livyApi/versions/2019-11-01-preview/sparkPools/Spark1",
+				"auth": {
+					"type": "AAD",
+					"authResource": "https://dev.azuresynapse.net"
+				},
+				"sparkVersion": "2.4",
+				"nodeCount": 3,
+				"cores": 4,
+				"memory": 28
+			}
+		},
+		"cells": [
+			{
+				"cell_type": "code",
+				"source": [
+					"import numpy as np\n",
+					"import pandas as pd\n",
+					"import matplotlib.pyplot as plt\n",
+					"from pyspark.ml.stat import Correlation\n",
+					"from pyspark.ml.feature import VectorAssembler\n",
+					"from pyspark.ml.regression import LinearRegression\n",
+					"from pyspark.mllib.evaluation import RegressionMetrics\n",
+					"from pyspark.ml.evaluation import RegressionEvaluator"
+				],
+				"execution_count": 3
+			},
+			{
+				"cell_type": "code",
+				"source": [
+					"# Setting random seed for notebook reproducability\n",
+					"rnd_seed=23\n",
+					"np.random.seed=rnd_seed\n",
+					"np.random.set_state = rnd_seed"
+				],
+				"execution_count": 4
+			},
+			{
+				"cell_type": "markdown",
+				"source": [
+					"## Read File\n",
+					""
+				]
+			},
+			{
+				"cell_type": "code",
+				"source": [
+					"%%pyspark\n",
+					"data_read = spark.read.load('abfss://rawdata@synapsedemos.dfs.core.windows.net/King County Housing/kc_house_data.csv', format='csv'\n",
+					"## If header exists uncomment line bellow\n",
+					", header=True\n",
+					",inferSchema=True\n",
+					")\n",
+					"#data_path.show(10)"
+				],
+				"attachments": null,
+				"execution_count": 5
+			},
+			{
+				"cell_type": "code",
+				"source": [
+					"data_read.printSchema()\n",
+					"data_read.columns\n",
+					"data_path = data_read.drop(\"id\",\"date\")\n",
+					"data_path.printSchema()\n",
+					"data_path.columns"
+				],
+				"execution_count": 6
+			},
+			{
+				"cell_type": "markdown",
+				"source": [
+					"## Column and Description\n",
+					"    Id: Unique Id for each field\n",
+					"    Date: Date of the home sale\n",
+					"    Price: Price of each home sale\n",
+					"    Bedroom: Number of bedrooms\n",
+					"    Bathroom: Number of bathrooms, where 0.5 accounts for a room with a toilet but no shower\n",
+					"    Sqft_living: Sqaure footage of the apartments interior living space\n",
+					"    Sqft_lot: Square footage of the land space\n",
+					"    floors: Number of floors\n",
+					"    waterfront: A dummy variable for whether the apartment was overlooking the waterfront\n",
+					"    view: An index from 0 to 4 of how good the view of the property was\n",
+					"    condition: An index from 1 to 5 on the condition of the apartment\n",
+					"    grade: An index from 1 to 13, where 1-3 falls short of building construction and design, 7 has an avergage level of construction and designm,  and 11-13 have a high quality construction and design\n",
+					"    sqft_above: Square footage of the interior housing space that is above  ground level\n",
+					"    sqft_basement: Square footage of the interior housing space that is below  ground level\n",
+					"    yr_built: The year house was initially built\n",
+					"    yr_renovated: The year of the house's last renovation\n",
+					"    zipcode: The area code where house is located\n",
+					"    lat: Lattitude\n",
+					"    long: Longitude\n",
+					"    sqft_living15: Square footage of interior housing living space for the nearest 15 neighbors\n",
+					"    sqft_lot15: Square footage of the land lots of the nearest 15 neighbors\n",
+					""
+				]
+			},
+			{
+				"cell_type": "code",
+				"source": [
+					"data_path.select(\"view\").distinct().show()"
+				],
+				"execution_count": 7
+			},
+			{
+				"cell_type": "markdown",
+				"source": [
+					"## Exploratory Data Analysis\n",
+					""
+				]
+			},
+			{
+				"cell_type": "code",
+				"source": [
+					"data_path.describe()\n",
+					""
+				],
+				"execution_count": 8
+			},
+			{
+				"cell_type": "code",
+				"source": [
+					"## This code is throwing error\n",
+					"featureCols = ['bedrooms', 'bathrooms', 'sqft_living', 'sqft_lot', 'floors', 'waterfront', 'view', 'condition', 'grade', 'sqft_above', 'sqft_basement', 'yr_built', 'yr_renovated', 'sqft_living15', 'sqft_lot15']\n",
+					"vector_col = \"corr_features\"\n",
+					"df_assembler = VectorAssembler(inputCols = featureCols, outputCol = vector_col)\n",
+					"df_vector = df_assembler.transform(data_path).select(vector_col)\n",
+					"matrix = Correlation.corr(df_vector,vector_col)\n",
+					"#matrix.collect()[0][\"Pearson({})\".format(vector_col)].values"
+				],
+				"execution_count": 9
+			},
+			{
+				"cell_type": "code",
+				"source": [
+					"df_pandas = data_path.toPandas()\n",
+					"print(df_pandas.isnull().any())\n",
+					"print(df_pandas.dtypes)\n",
+					"print(df_pandas.describe(include='all'))"
+				],
+				"execution_count": 10
+			},
+			{
+				"cell_type": "markdown",
+				"source": [
+					"## Feature Engineering\n",
+					""
+				]
+			},
+			{
+				"cell_type": "code",
+				"source": [
+					"df_pandas['price'] = pd.to_numeric(df_pandas['price'])\n",
+					"df_pandas.head(5)"
+				],
+				"execution_count": 11
+			},
+			{
+				"cell_type": "code",
+				"source": [
+					"df_pandas.describe()"
+				],
+				"execution_count": 12
+			},
+			{
+				"cell_type": "code",
+				"source": [
+					"pd.set_option('precision',2)\n",
+					"print(df_pandas.describe())\n",
+					""
+				],
+				"execution_count": 13
+			},
+			{
+				"cell_type": "code",
+				"source": [
+					"df_pandas.hist(bins=50,figsize=(20,15))\n",
+					"plt.show()"
+				],
+				"execution_count": 14
+			},
+			{
+				"cell_type": "code",
+				"source": [
+					"correlation = df_pandas.corr(method='pearson')\n",
+					"correlation\n",
+					"columns = correlation.nlargest(10, 'price').index\n",
+					"columns"
+				],
+				"execution_count": 15
+			},
+			{
+				"cell_type": "code",
+				"source": [
+					"correlation_map = np.corrcoef(df_pandas[columns].values.T)\n",
+					"import seaborn as sns\n",
+					"plt.figure(figsize=(8,8))\n",
+					"sns.set(font_scale=0.8)\n",
+					"#heatmap = sns.heatmap(correlation,annot=False)\n",
+					"heatmap = (sns.heatmap(correlation_map,cbar=True,annot=True, square = True, fmt='.2f'\n",
+					"            , yticklabels= columns.values, xticklabels = columns.values))\n",
+					"plt.show()\n",
+					""
+				],
+				"execution_count": 16
+			},
+			{
+				"cell_type": "code",
+				"source": [
+					"corr_matrix = df_pandas.corr()\n",
+					"plt.figure(figsize=(10,10))\n",
+					"s=corr_matrix['price'].sort_values(ascending=False)\n",
+					"print(s)\n",
+					"s.plot.bar()"
+				],
+				"execution_count": 17
+			},
+			{
+				"cell_type": "markdown",
+				"source": [
+					"## Feature Extraction\n",
+					""
+				]
+			},
+			{
+				"cell_type": "code",
+				"source": [
+					"#featureCols = ['bedrooms', 'bathrooms', 'sqft_living', 'sqft_lot', 'floors', 'waterfront', 'view', 'condition', 'grade', 'sqft_above', 'sqft_basement', 'yr_built', 'yr_renovated', 'sqft_living15', 'sqft_lot15']\n",
+					"\n",
+					"featureCols = ['bedrooms', 'bathrooms', 'sqft_living', 'waterfront', 'view', 'grade', 'sqft_above', 'sqft_basement',  'sqft_living15']"
+				],
+				"execution_count": 18
+			},
+			{
+				"cell_type": "markdown",
+				"source": [
+					"## Use Vector Assembler to put features into a feature vector column\n",
+					""
+				]
+			},
+			{
+				"cell_type": "code",
+				"source": [
+					"assembler = VectorAssembler(inputCols = featureCols, outputCol = \"features\")"
+				],
+				"execution_count": 19
+			},
+			{
+				"cell_type": "code",
+				"source": [
+					"assembled_df = assembler.transform(data_path)\n",
+					"assembled_df.show(10, truncate=False)"
+				],
+				"execution_count": 20
+			},
+			{
+				"cell_type": "markdown",
+				"source": [
+					"## Build a ML Model with Spark ML\n",
+					""
+				]
+			},
+			{
+				"cell_type": "code",
+				"source": [
+					"# Split the data into train and test sets\n",
+					"train_data, test_data = assembled_df.randomSplit([0.7,0.3],seed=rnd_seed)\n",
+					"train_data.columns"
+				],
+				"execution_count": 21
+			},
+			{
+				"cell_type": "code",
+				"source": [
+					"# Initialize 'lr'\n",
+					"lr = (LinearRegression(featuresCol = 'features', labelCol = \"price\", predictionCol = \"predPrice\", \n",
+					"maxIter=10, regParam=0.3, elasticNetParam=0.8, standardization=False))"
+				],
+				"execution_count": 22
+			},
+			{
+				"cell_type": "code",
+				"source": [
+					"# Fit the data to the model\n",
+					"linearModel = lr.fit(train_data)"
+				],
+				"execution_count": 23
+			},
+			{
+				"cell_type": "markdown",
+				"source": [
+					"## Evaluating the Model\n",
+					""
+				]
+			},
+			{
+				"cell_type": "code",
+				"source": [
+					"# Coefficients for the model\n",
+					"linearModel.coefficients"
+				],
+				"execution_count": 24
+			},
+			{
+				"cell_type": "code",
+				"source": [
+					"featureCols"
+				],
+				"execution_count": 25
+			},
+			{
+				"cell_type": "code",
+				"source": [
+					"# intercept for the model\n",
+					"linearModel.intercept"
+				],
+				"execution_count": 26
+			},
+			{
+				"cell_type": "code",
+				"source": [
+					"coeff_df = pd.DataFrame ({\"Feature\":[\"Intercept\"] + featureCols, \n",
+					"\"Co-efficients\": np.insert(linearModel.coefficients.toArray(),0,linearModel.intercept)})\n",
+					"coeff_df = coeff_df[[\"Feature\",\"Co-efficients\"]]"
+				],
+				"execution_count": 27
+			},
+			{
+				"cell_type": "code",
+				"source": [
+					"coeff_df"
+				],
+				"execution_count": 28
+			},
+			{
+				"cell_type": "markdown",
+				"source": [
+					"## Generate Predictions\n",
+					""
+				]
+			},
+			{
+				"cell_type": "code",
+				"source": [
+					"predictions = linearModel.transform(test_data)"
+				],
+				"execution_count": 29
+			},
+			{
+				"cell_type": "code",
+				"source": [
+					"# Extract the predictions and the \"known\" correct labels\n",
+					"predandlabels = predictions.select(\"predPrice\",\"Price\")\n",
+					"predandlabels.show()"
+				],
+				"execution_count": 30
+			},
+			{
+				"cell_type": "markdown",
+				"source": [
+					"## Inspecting the Model\n",
+					""
+				]
+			},
+			{
+				"cell_type": "markdown",
+				"source": [
+					"The RMSE measures how much error there is between two datasets comparing a predicted value and an observed or known value. The smaller an RMSE value, the closer predicted and observed values are.\n",
+					""
+				]
+			},
+			{
+				"cell_type": "code",
+				"source": [
+					"# get the RMSE\n",
+					"print(\"RMSE : {0}\".format(linearModel.summary.rootMeanSquaredError))"
+				],
+				"execution_count": 31
+			},
+			{
+				"cell_type": "code",
+				"source": [
+					"print(\"MAE:{0}\".format(linearModel.summary.meanAbsoluteError))"
+				],
+				"execution_count": 32
+			},
+			{
+				"cell_type": "markdown",
+				"source": [
+					"The R2 (\"R squared\") or the coefficient of determination is a measure that shows how close the data are to the fitted regression line. This score will always be between 0 and a 100% (or 0 to 1 in this case), where 0% indicates that the model explains none of the variability of the response data around its mean, and 100% indicates the opposite: it explains all the variability. That means that, in general, the higher the R-squared, the better the model fits our data.\n",
+					""
+				]
+			},
+			{
+				"cell_type": "code",
+				"source": [
+					"# Get the r-squared\n",
+					"print(\"R2: {0}\".format(linearModel.summary.r2))"
+				],
+				"execution_count": 33
+			},
+			{
+				"cell_type": "markdown",
+				"source": [
+					"## Using Regression Evaluator from pyspark.ml package\n",
+					""
+				]
+			},
+			{
+				"cell_type": "code",
+				"source": [
+					"evaluator = RegressionEvaluator(predictionCol = \"predPrice\", labelCol = \"Price\", metricName='rmse')\n",
+					"print(\"RMSE:{0}\".format(evaluator.evaluate(predandlabels)))"
+				],
+				"execution_count": 34
+			},
+			{
+				"cell_type": "code",
+				"source": [
+					"evaluator = RegressionEvaluator(predictionCol = \"predPrice\", labelCol = \"Price\", metricName='mae')\n",
+					"print(\"MAE:{0}\".format(evaluator.evaluate(predandlabels)))"
+				],
+				"execution_count": 35
+			},
+			{
+				"cell_type": "code",
+				"source": [
+					"evaluator = RegressionEvaluator(predictionCol = \"predPrice\", labelCol = \"Price\", metricName='r2')\n",
+					"print(\"R2:{0}\".format(evaluator.evaluate(predandlabels)))"
+				],
+				"execution_count": 36
+			},
+			{
+				"cell_type": "markdown",
+				"source": [
+					"## Using the RegressionMetrics from pyspark.mllib package\n",
+					""
+				]
+			},
+			{
+				"cell_type": "code",
+				"source": [
+					"metrics = RegressionMetrics(predandlabels.rdd)"
+				],
+				"execution_count": 37
+			},
+			{
+				"cell_type": "markdown",
+				"source": [
+					"## Export Model in ONNX Format\n",
+					""
+				]
+			},
+			{
+				"cell_type": "code",
+				"source": [
+					"from onnxmltools import convert_sparkml\n",
+					"from onnxmltools.convert.sparkml.utils import buildInitialTypesSimple"
+				],
+				"execution_count": 38
+			},
+			{
+				"cell_type": "code",
+				"source": [
+					"#drop all columns except selected columns: ['bedrooms', 'bathrooms', 'sqft_living', 'waterfront', 'view', 'grade', 'sqft_above', 'sqft_basement', 'sqft_living15']\n",
+					"#initial_types = buildInitialTypesSimple(test_data.drop('price','features', 'sqft_lot', 'floors', 'condition', 'yr_built', 'yr_renovated', 'zipcode', 'lat', 'long', 'sqft_lot15'))\n",
+					"initial_types = buildInitialTypesSimple(train_data.drop(\"price\",\"features\", 'sqft_lot', 'floors', 'condition', 'yr_built', 'yr_renovated', 'zipcode', 'lat', 'long', 'sqft_lot15'))"
+				],
+				"execution_count": 39
+			},
+			{
+				"cell_type": "code",
+				"source": [
+					"onnx_model = convert_sparkml(linearModel, \"Pyspark model\",initial_types)"
+				],
+				"execution_count": 40
+			},
+			{
+				"cell_type": "code",
+				"source": [
+					"with open(os.path.join(\"/tmp/\", \"model.onnx\"), \"wb\") as f:\n",
+					"    f.write(onnx_model.SerializeToString())"
+				],
+				"execution_count": 41
+			},
+			{
+				"cell_type": "code",
+				"source": [
+					"train_data.printSchema()"
+				],
+				"execution_count": 42
+			}
+		]
+	}
+}

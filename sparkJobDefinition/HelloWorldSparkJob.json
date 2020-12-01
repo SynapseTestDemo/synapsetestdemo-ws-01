@@ -1,0 +1,24 @@
+{
+	"name": "HelloWorldSparkJob",
+	"properties": {
+		"targetBigDataPool": {
+			"referenceName": "Spark1",
+			"type": "BigDataPoolReference"
+		},
+		"requiredSparkVersion": "2.4",
+		"language": "scala",
+		"jobProperties": {
+			"name": "HelloWorldSparkJob",
+			"file": "abfss://rawdata@synapsedemos.dfs.core.windows.net/SparkJobs/SampleTest.jar",
+			"className": "HelloWorldMain",
+			"args": [],
+			"jars": [],
+			"files": [],
+			"driverMemory": "28g",
+			"driverCores": 4,
+			"executorMemory": "28g",
+			"executorCores": 4,
+			"numExecutors": 1
+		}
+	}
+}

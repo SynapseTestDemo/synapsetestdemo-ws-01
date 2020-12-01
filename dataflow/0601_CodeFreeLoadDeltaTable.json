@@ -1,0 +1,32 @@
+{
+	"name": "0601_CodeFreeLoadDeltaTable",
+	"properties": {
+		"type": "MappingDataFlow",
+		"typeProperties": {
+			"sources": [
+				{
+					"dataset": {
+						"referenceName": "hrdata1csv_adls",
+						"type": "DatasetReference"
+					},
+					"name": "hrdatacsv"
+				}
+			],
+			"sinks": [
+				{
+					"linkedService": {
+						"referenceName": "synapsedemosws-WorkspaceDefaultStorage",
+						"type": "LinkedServiceReference"
+					},
+					"name": "hrdatadeltaformat"
+				}
+			],
+			"transformations": [
+				{
+					"name": "DerivedColumnAge"
+				}
+			],
+			"script": "source(output(\n\t\tEmployee_Name as string,\n\t\tEmpID as integer '000',\n\t\tMarriedID as boolean,\n\t\tDeptID as short '000',\n\t\tPayRate as double '000,000,000.000',\n\t\tPositionID as short '000',\n\t\tPosition as string,\n\t\tState as string,\n\t\tDOB as date 'yyyy-MM-dd',\n\t\tSex as string,\n\t\tDateofHire as date 'yyyy-MM-dd',\n\t\tDepartment as string\n\t),\n\tallowSchemaDrift: true,\n\tvalidateSchema: true,\n\tignoreNoFilesFound: false,\n\twildcardPaths:['HRData']) ~> hrdatacsv\nhrdatacsv derive(Age = abs(year(currentDate(\"2020-06-30\"))-year(toDate(byName('DOB'))))) ~> DerivedColumnAge\nDerivedColumnAge sink(allowSchemaDrift: true,\n\tvalidateSchema: false,\n\tinput(\n\t\tEmployee_Name as string,\n\t\tEmpID as integer,\n\t\tMarriedID as boolean,\n\t\tDeptID as string,\n\t\tPayRate as string,\n\t\tPositionID as string,\n\t\tPosition as string,\n\t\tState as string,\n\t\tDOB as string,\n\t\tSex as string,\n\t\tDateofHire as date,\n\t\tDepartment as string,\n\t\tMaritalStatusID as string,\n\t\tGenderID as string,\n\t\tEmpStatusID as string,\n\t\tPerfScoreID as string,\n\t\tFromDiversityJobFairID as string,\n\t\tTermd as string,\n\t\tZip as string,\n\t\tMaritalDesc as string,\n\t\tCitizenDesc as string,\n\t\tHispanicLatino as string,\n\t\tRaceDesc as string,\n\t\tDateofTermination as string,\n\t\tTermReason as string,\n\t\tEmploymentStatus as string,\n\t\tManagerName as string,\n\t\tManagerID as string,\n\t\tRecruitmentSource as string,\n\t\tPerformanceScore as string,\n\t\tEngagementSurvey as string,\n\t\tEmpSatisfaction as string,\n\t\tSpecialProjectsCount as string,\n\t\tLastPerformanceReview_Date as string,\n\t\tDaysLateLast30 as string,\n\t\tAge as integer\n\t),\n\tformat: 'delta',\n\tfileSystem: 'default',\n\tfolderPath: 'HRDataDeltaTable',\n\ttruncate: true,\n\tmergeSchema: false,\n\tvacuum: 0,\n\tdeletable:false,\n\tinsertable:true,\n\tupdateable:false,\n\tupsertable:false,\n\tmapColumn(\n\t\tEmployee_Name,\n\t\tEmpID,\n\t\tMarriedID,\n\t\tDeptID,\n\t\tPayRate,\n\t\tPositionID,\n\t\tPosition,\n\t\tState,\n\t\tDOB,\n\t\tSex,\n\t\tDateofHire,\n\t\tDepartment,\n\t\tAge\n\t),\n\tskipDuplicateMapInputs: true,\n\tskipDuplicateMapOutputs: true) ~> hrdatadeltaformat"
+		}
+	}
+}

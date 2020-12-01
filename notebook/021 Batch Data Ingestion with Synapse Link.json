@@ -1,0 +1,94 @@
+{
+	"name": "021 Batch Data Ingestion with Synapse Link",
+	"properties": {
+		"nbformat": 4,
+		"nbformat_minor": 2,
+		"sessionProperties": {
+			"driverMemory": "28g",
+			"driverCores": 4,
+			"executorMemory": "28g",
+			"executorCores": 4,
+			"numExecutors": 2
+		},
+		"metadata": {
+			"language_info": {
+				"name": "python"
+			}
+		},
+		"cells": [
+			{
+				"cell_type": "markdown",
+				"source": [
+					"## Batch Data Ingestion for Near real-time sales forecasting leveraging Synapse Link for Azure Cosmos DB\n",
+					"\n",
+					"<img src=\"https://cosmosnotebooksdata.blob.core.windows.net/notebookdata/store.PNG\" alt=\"Surface Device\" width=\"75%\"/>\n",
+					"\n",
+					""
+				]
+			},
+			{
+				"cell_type": "markdown",
+				"source": [
+					"## Load data into Spark Dataframes\n",
+					""
+				]
+			},
+			{
+				"cell_type": "code",
+				"source": [
+					"dfStoreDemoGraphics = (spark\n",
+					"                .read\n",
+					"                .csv(\"/RetailData/StoreDemoGraphics.csv\", header=True)\n",
+					"              )\n",
+					"\n",
+					"dfRetailSales = (spark\n",
+					"                .read\n",
+					"                .csv(\"/RetailData/RetailSales.csv\", header=True)\n",
+					"              )\n",
+					"\n",
+					"dfProduct = (spark\n",
+					"                .read\n",
+					"                .csv(\"/RetailData/Products.csv\", header=True)\n",
+					"              )"
+				],
+				"execution_count": 4
+			},
+			{
+				"cell_type": "markdown",
+				"source": [
+					"## Write dataframe to CosmosDB collection\n",
+					"The ingestion to the Azure Cosmos DB collection is always performed through the Transactional store irrespective of whether the Analytical Store is enabled or not."
+				]
+			},
+			{
+				"cell_type": "code",
+				"source": [
+					"dfStoreDemoGraphics.write\\\n",
+					"            .format(\"cosmos.oltp\")\\\n",
+					"            .option(\"spark.synapse.linkedService\", \"RetailSalesDemoDB\")\\\n",
+					"            .option(\"spark.cosmos.container\", \"StoreDemoGraphics\")\\\n",
+					"            .option(\"spark.cosmos.write.upsertEnabled\", \"true\")\\\n",
+					"            .mode('append')\\\n",
+					"            .save()\n",
+					"\n",
+					"dfRetailSales.write\\\n",
+					"            .format(\"cosmos.oltp\")\\\n",
+					"            .option(\"spark.synapse.linkedService\", \"RetailSalesDemoDB\")\\\n",
+					"            .option(\"spark.cosmos.container\", \"RetailSales\")\\\n",
+					"            .option(\"spark.cosmos.write.upsertEnabled\", \"true\")\\\n",
+					"            .mode('append')\\\n",
+					"            .save()\n",
+					"\n",
+					"dfProduct.write\\\n",
+					"            .format(\"cosmos.oltp\")\\\n",
+					"            .option(\"spark.synapse.linkedService\", \"RetailSalesDemoDB\")\\\n",
+					"            .option(\"spark.cosmos.container\", \"Products\")\\\n",
+					"            .option(\"spark.cosmos.write.upsertEnabled\", \"true\")\\\n",
+					"            .mode('append')\\\n",
+					"            .save()"
+				],
+				"execution_count": 5
+			}
+		]
+	}
+}

@@ -1,0 +1,16 @@
+{
+	"name": "02 SQL Serverless data exploration from CosmosDB",
+	"properties": {
+		"content": {
+			"query": "-- type your sql script here, we now have intellisense\n\nSELECT *\nFROM OPENROWSET(\n            'CosmosDB'\n            ,'account=cosmosdbsynapseaccount;database=RetailSalesDemoDB;key=2cAAmr4JVyCqSzL4qnWPnGrcK8ZyrCK6TBzo3Pblx2vLHxHvaf9RjZxcZg6c9rojmcaSyOVpp3aifPLxZwim4Q==;region='\n            ,[Products]\n    )\n    WITH (\n            id varchar(max),\n            productCode varchar(30),\n            wholeSaleCost varchar(30),          \n            basePrice varchar(30)\n    ) As products\n\n\n     \n\n",
+			"metadata": {
+				"language": "sql"
+			},
+			"currentConnection": {
+				"name": "master",
+				"type": "SqlOnDemand"
+			}
+		},
+		"type": "SqlQuery"
+	}
+}

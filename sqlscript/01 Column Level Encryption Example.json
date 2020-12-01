@@ -1,0 +1,16 @@
+{
+	"name": "01 Column Level Encryption Example",
+	"properties": {
+		"content": {
+			"query": "\n\n-- Create Table with Sample Data\nDrop Table dbo.CLEExample;\n\nCreate Table dbo.CLEExample\n(\n    creditCardNumber VARCHAR(19)\n)\nwith (\n    Distribution = Round_Robin\n)\n\nInsert Into dbo.CLEExample VALUES('0123-4567-8912-3456')\nInsert Into dbo.CLEExample VALUES('1234-5678-1234-5678')\nInsert Into dbo.CLEExample VALUES('5678-1234-1234-5678')\nInsert Into dbo.CLEExample VALUES('5678-1234-1234-5678')\nInsert Into dbo.CLEExample VALUES('1234-5678-5678-1234')\nInsert Into dbo.CLEExample VALUES('1234-0678-1234-5678')\nInsert Into dbo.CLEExample VALUES('1234-5678-1034-5678')\nInsert Into dbo.CLEExample VALUES('1234-5078-1234-5678')\nInsert Into dbo.CLEExample VALUES('1234-5678-1204-5678')\nInsert Into dbo.CLEExample VALUES('1234-5678-1234-5078')\nInsert Into dbo.CLEExample VALUES('1234-5678-1234-5608')\nInsert Into dbo.CLEExample VALUES('1234-5678-1234-5670')\nInsert Into dbo.CLEExample VALUES('1234-5678-1234-0678')\n\n\n-- DMV to check if Master Key is present\nSELECT TOP 10 * FROM sys.symmetric_keys\n\nDrop Master Key\n-- In case Master Key is not present, create a Master Key\nCreate MASTER Key ENCRYPTION BY PASSWORD='23987hxJ#KL95234nl0zBe';\n\n-- Validate Master Key is present\nSELECT TOP 10 * FROM sys.symmetric_keys\n\n\nOPEN MASTER KEY DECRYPTION BY PASSWORD = '23987hxJ#KL95234nl0zBe'   \n-- Create Certificate\nCREATE CERTIFICATE CreditCardCert\n    Encryption by Password = 'A34d@thp87'\n    With Subject = 'CreditCardCert Subject'\n    --START_DATE = '20200101',\n    --EXPIRY_DATE = '20501231'\nGO\n\n-- Validate Certificate is added to sys.certificates\nSelect Top 10 * from sys.certificates\n\n\nCREATE ASYMMETRIC KEY Akey1\n\tWITH ALGORITHM = RSA_3072\n\tENCRYPTION BY PASSWORD = 'ALP34d@thp56'\nGO\n\n\n-- Create Symmetric Key\nCREATE Symmetric Key Key1\n    WITH\n    KEY_SOURCE = 'key source',\n    IDENTITY_VALUE = 'identity value',\n    ALGORITHM = AES_192\n    ENCRYPTION BY certificate CreditCardCert, asymmetric key Akey1, password='A34d@thp87'\nGo\n\n\n-- Check open keys in database\n Select * from sys.openkeys\n\nALTER TABLE CLEExample ADD c1_encrypted varbinary(128)\n\n\n\n\n-------Open symmetric key-----------------\nopen symmetric key Key1 decryption by password = 'A34d@thp87'\nSelect * from sys.openkeys\n\n\n------EncrypyByKey--------------------------\nUPDATE CLEExample SET c1_encrypted = convert(varbinary(128), ENCRYPTBYKEY(Key_Guid('Key1'), creditCardNumber))\n\n-----DecryptByKey---------------\nopen symmetric key Key1 decryption by password = 'A34d@thp87'\nSELECT creditCardNumber, c1_encrypted, CONVERT(VARCHAR, DECRYPTBYKEY(C1_Encrypted)) AS 'C1_decrypted' FROM CLEExample\n\n",
+			"metadata": {
+				"language": "sql"
+			},
+			"currentConnection": {
+				"name": "SQLDB1",
+				"type": "SqlPool"
+			}
+		},
+		"type": "SqlQuery"
+	}
+}

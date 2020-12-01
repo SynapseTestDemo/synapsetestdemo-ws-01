@@ -1,0 +1,16 @@
+{
+	"name": "88 Load data to FactMovement Table",
+	"properties": {
+		"content": {
+			"query": "SET ANSI_NULLS ON\nGO\nSET QUOTED_IDENTIFIER ON\nGO\n\nDROP TABLE [wwi].[FactMovement]\n\nCREATE TABLE [wwi].[FactMovement]\n( \n\t[MovementKey] [bigint]  NOT NULL,\n\t[DateKey] [date]  NOT NULL,\n\t[StockItemKey] [int]  NOT NULL,\n\t[CustomerKey] [int]  NULL,\n\t[SupplierKey] [int]  NULL,\n\t[TransactionTypeKey] [int]  NOT NULL,\n\t[WWIStockItemTransactionID] [int]  NOT NULL,\n\t[WWIInvoiceID] [int]  NULL,\n\t[WWIPurchaseOrderID] [int]  NULL,\n\t[Quantity] [int]  NOT NULL,\n\t[LineageKey] [int]  NOT NULL\n)\nWITH\n(\n\tDISTRIBUTION = HASH ( [CustomerKey] ),\n\tCLUSTERED COLUMNSTORE INDEX\n)\nGO\n\nCOPY INTO wwi.FactMovement\n(MovementKey 1, DateKey 2, StockItemKey 3, CustomerKey 4, SupplierKey 5, TransactionTypeKey 6, WWIStockItemTransactionID 7, WWIInvoiceID 8, WWIPurchaseOrderID 9, Quantity 10, LineageKey 11)\nFROM 'https://synapsedemos.dfs.core.windows.net/rawdata/WWI/wwi-factmovement.csv'\nWITH\n(\n\tFILE_TYPE = 'CSV'\n\t,MAXERRORS = 0\n\t,FIELDQUOTE = '\"'\n\t,FIELDTERMINATOR = '|'\n\t,FIRSTROW = 2\n\t,ERRORFILE = 'https://synapsedemos.dfs.core.windows.net/rawdata/'\n\t,IDENTITY_INSERT = 'OFF'\n)\nGO\n\nSELECT TOP 100 * FROM wwi.FactMovement\nGO",
+			"metadata": {
+				"language": "sql"
+			},
+			"currentConnection": {
+				"name": "SQLPool01",
+				"type": "SqlPool"
+			}
+		},
+		"type": "SqlQuery"
+	}
+}

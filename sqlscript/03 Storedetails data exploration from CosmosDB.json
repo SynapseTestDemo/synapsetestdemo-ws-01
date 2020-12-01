@@ -1,0 +1,16 @@
+{
+	"name": "03 Storedetails data exploration from CosmosDB",
+	"properties": {
+		"content": {
+			"query": "\nSELECT \n    cast(storeId as int) as storeId,\n    cast(ratioAge60\tas float) as ratioAge60,\n    cast(collegeRatio as float) as collegeRatio,\t\n    cast(income\tas float) as income,\n    cast(highIncome150Ratio as float) as highIncome150Ratio,\t\n    cast(largeHH as float) as largeHH,\n    cast(minoritiesRatio as float) as minoritiesRatioas,\n    cast(more1FullTimeEmployeeRatio\tas float) as more1FullTimeEmployeeRatio,\n    cast(distanceNearestWarehouse as float) as distanceNearestWarehouse,\n    cast(salesNearestWarehousesRatio as float) as salesNearestWarehousesRatio,\n    cast(avgDistanceNearest5Supermarkets as float) as avgDistanceNearest5Supermarkets,\n    cast(salesNearest5StoresRatio as float) as salesNearest5StoresRatio,\n    id\nFROM OPENROWSET(\n            'CosmosDB'\n            ,'account=cosmosdbsynapseaccount;database=RetailSalesDemoDB;key=2cAAmr4JVyCqSzL4qnWPnGrcK8ZyrCK6TBzo3Pblx2vLHxHvaf9RjZxcZg6c9rojmcaSyOVpp3aifPLxZwim4Q==;region='\n            ,[StoreDemoGraphics]\n    )\n    WITH (\n\n            storeId\tvarchar(5),\n            ratioAge60\tvarchar(30),\n            collegeRatio varchar(30),\t\n            income\tvarchar(30),\n            highIncome150Ratio varchar(30),\t\n            largeHH\tvarchar(30),\n            minoritiesRatio\tvarchar(30),\n            more1FullTimeEmployeeRatio\tvarchar(30),\n            distanceNearestWarehouse\tvarchar(30),\n            salesNearestWarehousesRatio\tvarchar(30),\n            avgDistanceNearest5Supermarkets varchar(30),\n            salesNearest5StoresRatio\tvarchar(30),\n            id varchar(100)\n    ) As StoreDetails;\n\n",
+			"metadata": {
+				"language": "sql"
+			},
+			"currentConnection": {
+				"name": "master",
+				"type": "SqlOnDemand"
+			}
+		},
+		"type": "SqlQuery"
+	}
+}

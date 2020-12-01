@@ -1,0 +1,16 @@
+{
+	"name": "0502 Read Spark table using SQLOD",
+	"properties": {
+		"content": {
+			"query": "-- type your sql script here, we now have intellisense\n\nselect * from sparkdb1.dbo.employee\n\nselect * from dbo.externalorgdetails\n\nselect \n    org, \n    count(*) as OrgHeadCount, \n    COUNT(o.OrgLocation)\nFrom dbo.employee as e\njoin dbo.externalorgdetails as o\n    on e.org=o.OrgName\ngroup by \n    e.org\norder by \n    OrgHeadCount",
+			"metadata": {
+				"language": "sql"
+			},
+			"currentConnection": {
+				"name": "sparkdb1",
+				"type": "SqlOnDemand"
+			}
+		},
+		"type": "SqlQuery"
+	}
+}

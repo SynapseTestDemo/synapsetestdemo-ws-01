@@ -1,0 +1,16 @@
+{
+	"name": "01 Access Control on SQL Pool",
+	"properties": {
+		"content": {
+			"query": "CREATE USER [prlangad@microsoft.com] FROM EXTERNAL PROVIDER;\n\nEXEC sp_addrolemember 'db_owner', 'prlangad@microsoft.com';\n\nGRANT CONTROL ON DATABASE::SQLDB1 TO [prlangad@microsoft.com];\n\n",
+			"metadata": {
+				"language": "sql"
+			},
+			"currentConnection": {
+				"name": "SQLDB1",
+				"type": "SqlPool"
+			}
+		},
+		"type": "SqlQuery"
+	}
+}

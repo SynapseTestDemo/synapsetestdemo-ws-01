@@ -1,0 +1,16 @@
+{
+	"name": "01 COPY INTO basic example",
+	"properties": {
+		"content": {
+			"query": "-- type your sql script here, we now have intellisense\n\n\nCREATE TABLE dbo.TestTable\n(PASSENGERCOUNT INT,\nSUMTRIPDISTANCE FLOAT)\n\nCOPY INTO dbo.TestTable\n(PASSENGERCOUNT, SUMTRIPDISTANCE)\nFROM 'https://synapsedemos.dfs.core.windows.net/default/NYCTaxi/PassengerCountStats.parquet/part-00000-d778b271-f591-47bc-9c1b-855d1d017651-c000.snappy.parquet'\nWITH(\n    FILE_TYPE = ' PARQUET'\n)\n",
+			"metadata": {
+				"language": "sql"
+			},
+			"currentConnection": {
+				"name": "SQLDB1",
+				"type": "SqlPool"
+			}
+		},
+		"type": "SqlQuery"
+	}
+}

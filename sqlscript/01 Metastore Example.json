@@ -1,0 +1,16 @@
+{
+	"name": "01 Metastore Example",
+	"properties": {
+		"content": {
+			"query": "-- type your sql script here, we now have intellisense\n\n--sample trip data\nselect top 100 * \nfrom dbo.trip;\n\n--sample paasenger count stats query\nselect top 10 *\nfrom dbo.passengercountstats\n\n--sample analytical query with aggregation\nSELECT PassengerCount,\n      SUM(TripDistanceMiles) as SumTripDistance,\n      AVG(TripDistanceMiles) as AvgTripDistance\nFROM  dbo.trip\nWHERE TripDistanceMiles > 0 AND PassengerCount > 0\nGROUP BY PassengerCount\nORDER BY PassengerCount",
+			"metadata": {
+				"language": "sql"
+			},
+			"currentConnection": {
+				"name": "nyctaxi",
+				"type": "SqlOnDemand"
+			}
+		},
+		"type": "SqlQuery"
+	}
+}

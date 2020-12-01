@@ -1,0 +1,16 @@
+{
+	"name": "05 CosmosDB EDA",
+	"properties": {
+		"content": {
+			"query": "\nSELECT \n    storeId,\n    StoreDetails.productCode,\n    count(*) SalesCount,\n    SUM(cast(StoreDetails.Price as float)) as totalPrice,\n    MAX(products.BasePrice) as maxBasePrice\nFROM OPENROWSET(\n            'CosmosDB'\n            ,'account=cosmosdbsynapseaccount;database=RetailSalesDemoDB;key=2cAAmr4JVyCqSzL4qnWPnGrcK8ZyrCK6TBzo3Pblx2vLHxHvaf9RjZxcZg6c9rojmcaSyOVpp3aifPLxZwim4Q==;region='\n            ,[RetailSales]\n    )\n    WITH (\n        [logQuantity] varchar (30),\n        [productCode] varchar (30),\n        [quantity] varchar (30),\n        [price] varchar (30),\n        [advertising] varchar (30),\n        [id] varchar (100),\n        [storeId] varchar (30),\n        [weekStarting] varchar (30)\n    ) As StoreDetails\nJOIN \nOPENROWSET(\n            'CosmosDB'\n            ,'account=cosmosdbsynapseaccount;database=RetailSalesDemoDB;key=2cAAmr4JVyCqSzL4qnWPnGrcK8ZyrCK6TBzo3Pblx2vLHxHvaf9RjZxcZg6c9rojmcaSyOVpp3aifPLxZwim4Q==;region='\n            ,[Products]\n    )\n    WITH (\n            id varchar(max),\n            productCode varchar(30),\n            wholeSaleCost varchar(30),          \n            basePrice varchar(30)\n    ) As products\nON StoreDetails.productCode = products.productCode\n   GROUP BY storeId, StoreDetails.productCode\n   ORDER BY  SalesCount;\n\n",
+			"metadata": {
+				"language": "sql"
+			},
+			"currentConnection": {
+				"name": "master",
+				"type": "SqlOnDemand"
+			}
+		},
+		"type": "SqlQuery"
+	}
+}

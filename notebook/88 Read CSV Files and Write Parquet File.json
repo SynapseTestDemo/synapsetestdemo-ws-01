@@ -1,0 +1,98 @@
+{
+	"name": "88 Read CSV Files and Write Parquet File",
+	"properties": {
+		"nbformat": 4,
+		"nbformat_minor": 2,
+		"bigDataPool": {
+			"referenceName": "Spark1",
+			"type": "BigDataPoolReference"
+		},
+		"sessionProperties": {
+			"driverMemory": "28g",
+			"driverCores": 4,
+			"executorMemory": "28g",
+			"executorCores": 4,
+			"numExecutors": 2
+		},
+		"metadata": {
+			"language_info": {
+				"name": "python"
+			},
+			"a365ComputeOptions": {
+				"id": "/subscriptions/58f8824d-32b0-4825-9825-02fa6a801546/resourceGroups/prlangadrg/providers/Microsoft.Synapse/workspaces/synapsedemosws/bigDataPools/Spark1",
+				"name": "Spark1",
+				"type": "Spark",
+				"endpoint": "https://synapsedemosws.dev.azuresynapse.net/livyApi/versions/2019-11-01-preview/sparkPools/Spark1",
+				"auth": {
+					"type": "AAD",
+					"authResource": "https://dev.azuresynapse.net"
+				},
+				"sparkVersion": "2.4",
+				"nodeCount": 3,
+				"cores": 4,
+				"memory": 28
+			}
+		},
+		"cells": [
+			{
+				"cell_type": "code",
+				"source": [
+					"%%pyspark\n",
+					"df = spark.read.load('abfss://rawdata@synapsedemos.dfs.core.windows.net/WWI/postalcodes.csv', format='csv'\n",
+					", header=True\n",
+					")\n",
+					"display(df.limit(10))"
+				],
+				"attachments": null,
+				"execution_count": 6
+			},
+			{
+				"cell_type": "markdown",
+				"source": [
+					"## Write data to storage account in parquet file format\n",
+					""
+				]
+			},
+			{
+				"cell_type": "code",
+				"source": [
+					"# Primary storage info\n",
+					"account_name = 'synapsedemos' # fill in your primary account name\n",
+					"container_name = 'curateddata' # fill in your container name\n",
+					"relative_path = 'WWI.parquet' # fill in your relative folder path\n",
+					"\n",
+					"adls_path = 'abfss://%s@%s.dfs.core.windows.net/%s/' % (container_name, account_name, relative_path)\n",
+					"print('Primary storage account path: ' + adls_path)\n",
+					"parquet_path = adls_path + 'PostalCodes'\n",
+					"df.write.parquet(parquet_path, mode = 'overwrite')\n",
+					""
+				],
+				"execution_count": 9
+			},
+			{
+				"cell_type": "code",
+				"source": [
+					"data_path = spark.read.load('abfss://rawdata@synapsedemos.dfs.core.windows.net/WWI/wwi-dimcity.csv'\n",
+					", format='csv'\n",
+					", header=True\n",
+					", sep='|'\n",
+					")\n",
+					"#display(data_path.limit(10))\n",
+					"df = data_path.withColumnRenamed(\"City Key\",\"CityKey\")\\\n",
+					"            .withColumnRenamed(\"WWI City ID\", \"WWICityID\")\\\n",
+					"            .withColumnRenamed(\"State Province\", \"StateProvince\")\\\n",
+					"            .withColumnRenamed(\"Sales Territory\",\"SalesTerritory\")\\\n",
+					"            .withColumnRenamed(\"Latest Recorded Population\",\"LatestRecordedPopulation\")\\\n",
+					"            .withColumnRenamed(\"Valid From\",\"ValidFrom\")\\\n",
+					"            .withColumnRenamed(\"Valid To\", \"ValidTo\")\\\n",
+					"            .withColumnRenamed(\"Lineage Key\",\"LineageKey\")\n",
+					"\n",
+					"display(df.limit(10))\n",
+					"parquet_path = adls_path + 'DimCity'\n",
+					"df.write.parquet(parquet_path, mode = 'overwrite')"
+				],
+				"execution_count": 21
+			}
+		]
+	}
+}

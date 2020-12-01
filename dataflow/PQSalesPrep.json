@@ -1,0 +1,29 @@
+{
+	"name": "PQSalesPrep",
+	"properties": {
+		"type": "WranglingDataFlow",
+		"typeProperties": {
+			"sources": [
+				{
+					"name": "RetailDataCSV",
+					"script": "",
+					"dataset": {
+						"referenceName": "RetailDataCSV",
+						"type": "DatasetReference"
+					}
+				}
+			],
+			"sinks": [
+				{
+					"name": "Sink1",
+					"dataset": {
+						"referenceName": "SalesOutput",
+						"type": "DatasetReference"
+					},
+					"script": "sink(allowSchemaDrift: true,\n\tvalidateSchema: false,\n\tpartitionFileNames:['salesoutput.csv'],\n\tpartitionBy('hash', 1),\n\tskipDuplicateMapInputs: true,\n\tskipDuplicateMapOutputs: true) ~> Sink1"
+				}
+			],
+			"script": "section Section1;\r\nshared RetailDataCSV = let\r\n  AdfDoc = AzureStorage.BlobContents(\"https://azuresynapsesa.blob.core.windows.net/default/RetailData/RetailSales.csv\"),\r\n  Csv = Csv.Document(AdfDoc, [Delimiter = \",\", Encoding = TextEncoding.Utf8, QuoteStyle = QuoteStyle.Csv]),\r\n  PromotedHeaders = Table.PromoteHeaders(Csv, [PromoteAllScalars = true])\r\nin\r\n  PromotedHeaders;\r\nshared UserQuery = let\r\n  Source = RetailDataCSV,\r\n  #\"Changed column type\" = Table.TransformColumnTypes(Source, {{\"quantity\", Int64.Type}, {\"logQuantity\", type number}})\r\nin\r\n  #\"Changed column type\";\r\n"
+		}
+	}
+}

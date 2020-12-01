@@ -1,0 +1,31 @@
+{
+	"name": "Predict Retail Qty AML",
+	"properties": {
+		"activities": [
+			{
+				"name": "Machine Learning Execute Pipeline1",
+				"type": "AzureMLExecutePipeline",
+				"dependsOn": [],
+				"policy": {
+					"timeout": "7.00:00:00",
+					"retry": 0,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"mlPipelineId": "b559eca1-c283-4f0d-805e-96da6e8bb3b6",
+					"experimentName": "retail_qty_prediction_aml"
+				},
+				"linkedServiceName": {
+					"referenceName": "AzureMLServiceNelliWeeML",
+					"type": "LinkedServiceReference"
+				}
+			}
+		],
+		"annotations": [],
+		"lastPublishTime": "2020-11-11T06:15:41Z"
+	},
+	"type": "Microsoft.Synapse/workspaces/pipelines"
+}

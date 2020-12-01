@@ -1,0 +1,16 @@
+{
+	"name": "AzureSynapseAnalyticsSQLPoolRetail",
+	"properties": {
+		"linkedServiceName": {
+			"referenceName": "wsazuresynapseanalytics-WorkspaceDefaultSqlServer",
+			"type": "LinkedServiceReference",
+			"parameters": {
+				"DBName": "Predict_Pool"
+			}
+		},
+		"annotations": [],
+		"type": "AzureSqlDWTable",
+		"schema": []
+	},
+	"type": "Microsoft.Synapse/workspaces/datasets"
+}

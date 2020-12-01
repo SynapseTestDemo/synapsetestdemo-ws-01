@@ -1,0 +1,19 @@
+{
+	"name": "000 High throughput egress to SQLPool",
+	"properties": {
+		"folder": {
+			"name": "MS Conf scripts"
+		},
+		"content": {
+			"query": "-- show number of records ingested to far\n\nSELECT count_big(*) \nFROM dbo.dwgranular \n\n-- diff number of records\n\nDECLARE @before bigint =           ;\nDECLARE @after bigint =          ;\nDECLARE @million float = 1000000;\nSELECT ROUND( (@after - @before) / @million , 2 ) AS RecordsMil\n\n\n",
+			"metadata": {
+				"language": "sql"
+			},
+			"currentConnection": {
+				"name": "Streaming_Pool",
+				"type": "SqlPool"
+			}
+		},
+		"type": "SqlQuery"
+	}
+}

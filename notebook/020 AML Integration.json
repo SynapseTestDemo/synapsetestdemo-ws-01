@@ -1,5 +1,5 @@
 {
-	"name": "020 Surface Sales Forecasting with CosmosDB",
+	"name": "020 AML Integration",
 	"properties": {
 		"folder": {
 			"name": "MS Conf notebooks"
@@ -33,39 +33,26 @@
 				"sparkVersion": "2.4",
 				"nodeCount": 3,
 				"cores": 8,
-				"memory": 56
+				"memory": 56,
+				"extraHeader": null
 			}
 		},
 		"cells": [
 			{
 				"cell_type": "markdown",
 				"source": [
-					"# Near real-time sales forecasting leveraging Synapse Link for Azure Cosmos DB\n",
-					"\n",
-					"Microsoft Retail Store has built its new-age supply chain management system on Azure Cosmos DB.\n",
-					"\n",
-					"The supply chain management system tracks retail operations across 1000s of locations across the world and tracks inventory across the 100s of Microsoft product SKUs sold.\n",
-					"\n",
-					"This notebook shows the power of Synapse Link for Cosmos DB to be able to run near real-time analytics over operational data, without ETL and without impact to transactional workloads.\n",
-					"\n",
-					"In particular, the **goal here is to build a sales forecasting model to help store locations customize their inventory planning in real-time based on flucutations in demand.**\n",
-					"\n",
-					"<img src=\"https://cosmosnotebooksdata.blob.core.windows.net/notebookdata/store.PNG\" alt=\"Surface Device\" width=\"75%\"/>\n",
-					"\n",
-					"&nbsp;"
-				]
-			},
-			{
-				"cell_type": "markdown",
-				"source": [
-					"## Synapse Link allows you to seamlessly create Spark tables over your historical operational data in Cosmos DB\n",
+					"## Read data\n",
 					"\n",
 					""
-				]
+				],
+				"attachments": null
 			},
 			{
 				"cell_type": "code",
 				"metadata": {
+					"microsoft": {
+						"language": "sparksql"
+					},
 					"diagram": {
 						"activateDiagramType": 1,
 						"chartConfig": {
@@ -77,7 +64,7 @@
 							"aggregation": "SUM",
 							"aggByBackend": false
 						},
-						"aggData": "{}",
+						"aggData": "\"{}\"",
 						"isSummary": false,
 						"previewData": {
 							"filter": null
@@ -89,11 +76,15 @@
 					"%%sql\n",
 					"create database if not exists surfaceSalesDB"
 				],
+				"attachments": null,
 				"execution_count": 4
 			},
 			{
 				"cell_type": "code",
 				"metadata": {
+					"microsoft": {
+						"language": "sparksql"
+					},
 					"diagram": {
 						"activateDiagramType": 1,
 						"chartConfig": {
@@ -105,7 +96,7 @@
 							"aggregation": "SUM",
 							"aggByBackend": false
 						},
-						"aggData": "{}",
+						"aggData": "\"{}\"",
 						"isSummary": false,
 						"previewData": {
 							"filter": null
@@ -121,11 +112,15 @@
 					"    spark.cosmos.container 'RetailSales'\n",
 					")"
 				],
+				"attachments": null,
 				"execution_count": 5
 			},
 			{
 				"cell_type": "code",
 				"metadata": {
+					"microsoft": {
+						"language": "sparksql"
+					},
 					"diagram": {
 						"activateDiagramType": 1,
 						"chartConfig": {
@@ -137,7 +132,7 @@
 							"aggregation": "SUM",
 							"aggByBackend": false
 						},
-						"aggData": "{}",
+						"aggData": "\"{}\"",
 						"isSummary": false,
 						"previewData": {
 							"filter": null
@@ -153,11 +148,15 @@
 					"    spark.cosmos.container 'StoreDemoGraphics'\n",
 					")"
 				],
+				"attachments": null,
 				"execution_count": 6
 			},
 			{
 				"cell_type": "code",
 				"metadata": {
+					"microsoft": {
+						"language": "sparksql"
+					},
 					"diagram": {
 						"activateDiagramType": 1,
 						"chartConfig": {
@@ -169,7 +168,7 @@
 							"aggregation": "SUM",
 							"aggByBackend": false
 						},
-						"aggData": "{}",
+						"aggData": "\"{}\"",
 						"isSummary": false,
 						"previewData": {
 							"filter": null
@@ -185,14 +184,16 @@
 					"    spark.cosmos.container 'Products'\n",
 					")"
 				],
+				"attachments": null,
 				"execution_count": 7
 			},
 			{
 				"cell_type": "markdown",
 				"source": [
-					"## Leverage power of Spark SQL to join & aggregate operational data across Cosmos DB containers\n",
+					"## Leverage power of Spark SQL to join & aggregate\n",
 					""
-				]
+				],
+				"attachments": null
 			},
 			{
 				"cell_type": "code",
@@ -226,6 +227,7 @@
 					"                 order by a.weekStarting, a.storeId\")\n",
 					"           "
 				],
+				"attachments": null,
 				"execution_count": 8
 			},
 			{
@@ -234,13 +236,15 @@
 					"## Leverage power of Azure Machine Learning's AutoML to build an end-to-end forecasting pipeline\n",
 					"\n",
 					""
-				]
+				],
+				"attachments": null
 			},
 			{
 				"cell_type": "markdown",
 				"source": [
 					"### Azure Machine Learning environment setup"
-				]
+				],
+				"attachments": null
 			},
 			{
 				"cell_type": "code",
@@ -275,6 +279,7 @@
 					"outputDf = pd.DataFrame(data = output, index = [''])\n",
 					"outputDf.T"
 				],
+				"attachments": null,
 				"execution_count": 3
 			},
 			{
@@ -282,7 +287,8 @@
 				"source": [
 					"### Feature engineering, Splitting train & test sets\n",
 					""
-				]
+				],
+				"attachments": null
 			},
 			{
 				"cell_type": "code",
@@ -321,13 +327,15 @@
 					"from azureml.core.dataset import Dataset\n",
 					"train_dataset = Dataset.Tabular.from_delimited_files(path=datastore.path('dataset/SurfaceSales5_train.csv'))"
 				],
+				"attachments": null,
 				"execution_count": 6
 			},
 			{
 				"cell_type": "markdown",
 				"source": [
 					"### Leveraging model parallelism in AutoML for training"
-				]
+				],
+				"attachments": null
 			},
 			{
 				"cell_type": "code",
@@ -353,13 +361,15 @@
 					"\n",
 					"remote_run = experiment.submit(automl_config, show_output=True)"
 				],
+				"attachments": null,
 				"execution_count": 7
 			},
 			{
 				"cell_type": "markdown",
 				"source": [
 					"### Retrieving the Best Model"
-				]
+				],
+				"attachments": null
 			},
 			{
 				"cell_type": "code",
@@ -369,13 +379,15 @@
 					"model_name = best_run.properties['model_name']\n",
 					"print(model_name)"
 				],
+				"attachments": null,
 				"execution_count": 8
 			},
 			{
 				"cell_type": "markdown",
 				"source": [
 					"### Forecasting using best model over test data"
-				]
+				],
+				"attachments": null
 			},
 			{
 				"cell_type": "code",
@@ -384,13 +396,15 @@
 					"y_test = X_test.pop(target_column_name).values\n",
 					"y_predictions, X_trans = fitted_model.forecast(X_test)"
 				],
+				"attachments": null,
 				"execution_count": 9
 			},
 			{
 				"cell_type": "markdown",
 				"source": [
 					"### Visualizing the results over test data"
-				]
+				],
+				"attachments": null
 			},
 			{
 				"cell_type": "code",
@@ -447,6 +461,7 @@
 					"plt.legend((test_pred, test_test), ('prediction', 'truth'), loc='upper left', fontsize=8)\n",
 					"plt.show()"
 				],
+				"attachments": null,
 				"execution_count": 10
 			},
 			{
@@ -458,7 +473,8 @@
 					"+ ML-Ops Pipeline - CI/CD\n",
 					"+ Monitoring\n",
 					""
-				]
+				],
+				"attachments": null
 			}
 		]
 	}

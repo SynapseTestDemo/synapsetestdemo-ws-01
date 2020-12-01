@@ -1,8 +1,15 @@
 {
 	"name": "021 Batch Data Ingestion with Synapse Link",
 	"properties": {
+		"folder": {
+			"name": "MS Conf notebooks"
+		},
 		"nbformat": 4,
 		"nbformat_minor": 2,
+		"bigDataPool": {
+			"referenceName": "analyticspool",
+			"type": "BigDataPoolReference"
+		},
 		"sessionProperties": {
 			"driverMemory": "28g",
 			"driverCores": 4,
@@ -13,6 +20,20 @@
 		"metadata": {
 			"language_info": {
 				"name": "python"
+			},
+			"a365ComputeOptions": {
+				"id": "/subscriptions/7e416de3-c506-4776-8270-83fd73c6cc37/resourceGroups/demosynapserg/providers/Microsoft.Synapse/workspaces/wsazuresynapseanalytics/bigDataPools/analyticspool",
+				"name": "analyticspool",
+				"type": "Spark",
+				"endpoint": "https://wsazuresynapseanalytics.dev.azuresynapse.net/livyApi/versions/2019-11-01-preview/sparkPools/analyticspool",
+				"auth": {
+					"type": "AAD",
+					"authResource": "https://dev.azuresynapse.net"
+				},
+				"sparkVersion": "2.4",
+				"nodeCount": 3,
+				"cores": 8,
+				"memory": 56
 			}
 		},
 		"cells": [
@@ -51,7 +72,7 @@
 					"                .csv(\"/RetailData/Products.csv\", header=True)\n",
 					"              )"
 				],
-				"execution_count": 4
+				"execution_count": 5
 			},
 			{
 				"cell_type": "markdown",
@@ -87,7 +108,7 @@
 					"            .mode('append')\\\n",
 					"            .save()"
 				],
-				"execution_count": 5
+				"execution_count": 6
 			}
 		]
 	}

@@ -1,0 +1,13 @@
+{
+	"name": "AzureSynapseAnalyticsTable3",
+	"properties": {
+		"linkedServiceName": {
+			"referenceName": "wsazuresynapseanalytics-WorkspaceDefaultSqlServer",
+			"type": "LinkedServiceReference"
+		},
+		"annotations": [],
+		"type": "AzureSqlDWTable",
+		"schema": []
+	},
+	"type": "Microsoft.Synapse/workspaces/datasets"
+}

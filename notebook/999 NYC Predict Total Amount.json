@@ -1,0 +1,337 @@
+{
+	"name": "999 NYC Predict Total Amount",
+	"properties": {
+		"folder": {
+			"name": "Test notebooks"
+		},
+		"nbformat": 4,
+		"nbformat_minor": 2,
+		"bigDataPool": {
+			"referenceName": "hummingbird",
+			"type": "BigDataPoolReference"
+		},
+		"sessionProperties": {
+			"driverMemory": "56g",
+			"driverCores": 8,
+			"executorMemory": "56g",
+			"executorCores": 8,
+			"numExecutors": 2,
+			"conf": {
+				"spark.dynamicAllocation.enabled": "false",
+				"spark.dynamicAllocation.minExecutors": "2",
+				"spark.dynamicAllocation.maxExecutors": "2"
+			}
+		},
+		"metadata": {
+			"saveOutput": true,
+			"language_info": {
+				"name": "python"
+			},
+			"a365ComputeOptions": {
+				"id": "/subscriptions/7e416de3-c506-4776-8270-83fd73c6cc37/resourceGroups/demosynapserg/providers/Microsoft.Synapse/workspaces/wsazuresynapseanalytics/bigDataPools/hummingbird",
+				"name": "hummingbird",
+				"type": "Spark",
+				"endpoint": "https://wsazuresynapseanalytics.dev.azuresynapse.net/livyApi/versions/2019-11-01-preview/sparkPools/hummingbird",
+				"auth": {
+					"type": "AAD",
+					"authResource": "https://dev.azuresynapse.net"
+				},
+				"sparkVersion": "2.4",
+				"nodeCount": 10,
+				"cores": 8,
+				"memory": 56
+			}
+		},
+		"cells": [
+			{
+				"cell_type": "code",
+				"source": [
+					"import pip\n",
+					"\n",
+					"pip.main([\"install\", \"skl2onnx==1.7.0\"])\n",
+					"pip.main([\"install\", \"mlflow==1.10.0\"])\n",
+					"pip.main([\"install\", \"azureml-sdk==1.16.0\"])\n",
+					"pip.main([\"install\", \"azureml-mlflow==1.16.0\"])"
+				],
+				"execution_count": 2
+			},
+			{
+				"cell_type": "markdown",
+				"source": [
+					"## Pre-requisites run this Notebook \n",
+					"No action required in this WS. Just use Spark pool: hummingbird\n",
+					"\n",
+					"\n",
+					"### requirements.txt:\n",
+					"* hummingbird-ml==0.0.6\n",
+					"* skl2onnx==1.7.0\n",
+					"* mlflow==1.10.0\n",
+					"* azureml-mlflow==1.12.0\n",
+					"\n",
+					"\n",
+					"\n",
+					"\n",
+					""
+				]
+			},
+			{
+				"cell_type": "markdown",
+				"source": [
+					"## Import scikit-learn's RandomForestClassifier, ONNX, and Hummingbird\n",
+					""
+				]
+			},
+			{
+				"cell_type": "code",
+				"source": [
+					"import time\n",
+					"import numpy as np\n",
+					"import pandas as pd\n",
+					"import onnxruntime as ort\n",
+					"#import hummingbird.ml\n",
+					"\n",
+					"from datetime import datetime\n",
+					"from timeit import default_timer as timer\n",
+					"from sklearn.ensemble import RandomForestRegressor\n",
+					"from sklearn.model_selection import train_test_split\n",
+					"from sklearn.pipeline import Pipeline\n",
+					"from sklearn.preprocessing import StandardScaler\n",
+					"from sklearn.compose import ColumnTransformer\n",
+					"from skl2onnx import convert_sklearn\n",
+					"from skl2onnx.common.data_types import DoubleTensorType, FloatTensorType"
+				],
+				"attachments": null,
+				"execution_count": 3
+			},
+			{
+				"cell_type": "markdown",
+				"source": [
+					"## Load data from Cosmos DB and convert to Pandas \n",
+					""
+				]
+			},
+			{
+				"cell_type": "code",
+				"source": [
+					"%%pyspark\n",
+					"df = spark.sql(\"SELECT * FROM default.t1\").toPandas()"
+				],
+				"execution_count": 4
+			},
+			{
+				"cell_type": "code",
+				"metadata": {
+					"diagram": {
+						"activateDiagramType": 1,
+						"chartConfig": {
+							"category": "bar",
+							"keys": [
+								"fareAmount"
+							],
+							"values": [
+								"tipped"
+							],
+							"yLabel": "tipped",
+							"xLabel": "fareAmount",
+							"aggregation": "SUM",
+							"aggByBackend": false
+						},
+						"aggData": "{\"tipped\":{\"5\":1,\"10\":0,\"31\":1,\"10.5\":0,\"19.5\":0}}",
+						"isSummary": false,
+						"previewData": {
+							"filter": null
+						},
+						"isSql": false
+					}
+				},
+				"source": [
+					"display(df.head(5))"
+				],
+				"execution_count": 5
+			},
+			{
+				"cell_type": "markdown",
+				"source": [
+					"### Define some featurizers: dictionary encoder and date featurizer\n",
+					"\n",
+					""
+				]
+			},
+			{
+				"cell_type": "code",
+				"source": [
+					"def dictionary_encode(df, column, dictionary):\n",
+					"\n",
+					"    def add_into_dict(value, dictionary):\n",
+					"        count = 0\n",
+					"        if len(dictionary) > 0:\n",
+					"            count = max(dictionary.values())\n",
+					"        count += 1\n",
+					"        dictionary[value] = count\n",
+					"        return count\n",
+					"\n",
+					"    df[column] = pd.DataFrame(df[column].values)[0].apply(lambda x: dictionary[x] if x in dictionary else add_into_dict(x, dictionary))\n",
+					"\n",
+					"def date_featurize(df,column):\n",
+					"    df[column] = pd.DataFrame(df[column].values)[0].apply(lambda x: (int(datetime.strptime(x, '%m/%d/%Y').strftime('%m%d%Y'))))"
+				],
+				"attachments": null,
+				"execution_count": 6
+			},
+			{
+				"cell_type": "markdown",
+				"source": [
+					"## Featurize the data"
+				]
+			},
+			{
+				"cell_type": "code",
+				"source": [
+					"dictionary = {}\n",
+					"\n",
+					"dictionary_encode(df,'pickupTimeBin', dictionary)\n",
+					"##date_featurize(df,'weekStarting')\n",
+					"df.head(5)"
+				],
+				"attachments": null,
+				"execution_count": 7
+			},
+			{
+				"cell_type": "code",
+				"source": [
+					"train_df, test_df = train_test_split(df, test_size=0.2)\n",
+					"\n",
+					"train_features = pd.DataFrame(train_df.drop(['fareAmount'], axis = 1))\n",
+					"train_labels = pd.DataFrame(train_df.iloc[:,train_df.columns.tolist().index('fareAmount')])\n",
+					"\n",
+					"test_features = pd.DataFrame(test_df.drop(['fareAmount'], axis = 1))\n",
+					"test_labels = pd.DataFrame(test_df.iloc[:,test_df.columns.tolist().index('fareAmount')])\n",
+					"\n",
+					"# Convert test_features from df to numpy array\n",
+					"test_features = np.array(test_features).astype(np.float32)"
+				],
+				"execution_count": 8
+			},
+			{
+				"cell_type": "code",
+				"source": [
+					"# Define the pipeline\n",
+					"scaler_transformer = Pipeline(steps=[('scaler', StandardScaler())])\n",
+					"preprocessor = ColumnTransformer(transformers=[('scaling', scaler_transformer, list(train_features.columns))])\n",
+					"model = RandomForestRegressor(n_estimators=1000, max_depth=9)\n",
+					"pipeline = Pipeline(steps=[('preprocessor', preprocessor), ('model', model)])"
+				],
+				"attachments": null,
+				"execution_count": 9
+			},
+			{
+				"cell_type": "markdown",
+				"source": [
+					"## Train a Random Forest Regressor model\n",
+					""
+				]
+			},
+			{
+				"cell_type": "code",
+				"source": [
+					"pipeline.fit(train_features, train_labels)"
+				],
+				"attachments": null,
+				"execution_count": 10
+			},
+			{
+				"cell_type": "code",
+				"source": [
+					"def input_types(features):\n",
+					"    inputs = []\n",
+					"    for columnName, columnType in zip(features.columns, features.dtypes):\n",
+					"        inputs.append((str(columnName), DoubleTensorType([None, 1])))\n",
+					"    return inputs"
+				],
+				"execution_count": 11
+			},
+			{
+				"cell_type": "code",
+				"source": [
+					"\n",
+					"initial_types = input_types(train_features)\n",
+					"initial_types"
+				],
+				"execution_count": 12
+			},
+			{
+				"cell_type": "markdown",
+				"source": [
+					"## Convert the trained model into ONNX using skl2onnx\n",
+					"\n",
+					"\n",
+					""
+				]
+			},
+			{
+				"cell_type": "code",
+				"source": [
+					"def input_types(features):\n",
+					"    inputs = []\n",
+					"    for columnName, columnType in zip(features.columns, features.dtypes):\n",
+					"        inputs.append((str(columnName), DoubleTensorType([None, 1])))\n",
+					"    return inputs\n",
+					"\n",
+					"onnx_model = convert_sklearn(pipeline, initial_types=input_types(train_features), final_types=[('fareAmount', DoubleTensorType([None, 1]))])"
+				],
+				"execution_count": 13
+			},
+			{
+				"cell_type": "code",
+				"metadata": {
+					"outputCollapsed": true
+				},
+				"source": [
+					"from azureml.core import Workspace\n",
+					"\n",
+					"subscription_id = \"58f8824d-32b0-4825-9825-02fa6a801546\" #you should be owner or contributor\n",
+					"resource_group = \"prlangadrg\" #you should be owner or contributor\n",
+					"workspace_name = \"amlwsdemos\" #your workspace name\n",
+					"\n",
+					"ws = Workspace(subscription_id = subscription_id, resource_group = resource_group, workspace_name = workspace_name)\n",
+					"\n",
+					"print('Workspace name: ' + ws.name, \n",
+					"      'Azure region: ' + ws.location, \n",
+					"      'Subscription id: ' + ws.subscription_id, \n",
+					"      'Resource group: ' + ws.resource_group, sep = '\\n')"
+				],
+				"execution_count": 14
+			},
+			{
+				"cell_type": "code",
+				"source": [
+					"import mlflow\n",
+					"import mlflow.onnx\n",
+					"from mlflow.models.signature import infer_signature\n",
+					"\n",
+					"demo_name = 'nyctaxi'\n",
+					"spark_table_name = '_data'\n",
+					"experiment_name = demo_name + '-' + spark_table_name + '-' + '20201705231400'\n",
+					"model_name = experiment_name + '-Best'\n",
+					"artifact_path = 'outputs'\n",
+					"\n",
+					"mlflow.set_tracking_uri(ws.get_mlflow_tracking_uri())\n",
+					"mlflow.set_experiment(experiment_name)\n",
+					"\n",
+					"with mlflow.start_run() as run:\n",
+					"    # Infer signature\n",
+					"    input_sample = train_features.head(1).astype(np.float64)\n",
+					"    output_sample = pd.DataFrame(columns=['fareAmount'], data=[1234.0]).astype(np.float64)\n",
+					"    signature = infer_signature(input_sample, output_sample)\n",
+					"\n",
+					"    # Save the model to the outputs directory for capture\n",
+					"    mlflow.onnx.log_model(onnx_model, artifact_path, signature=signature)\n",
+					"\n",
+					"    # Register the model to AML model registry\n",
+					"    mlflow.register_model('runs:/' + run.info.run_id + '/' + artifact_path, model_name)"
+				],
+				"execution_count": 15
+			}
+		]
+	}
+}

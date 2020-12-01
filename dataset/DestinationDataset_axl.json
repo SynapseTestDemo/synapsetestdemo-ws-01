@@ -1,0 +1,42 @@
+{
+	"name": "DestinationDataset_axl",
+	"properties": {
+		"annotations": [],
+		"type": "SqlPoolTable",
+		"schema": [
+			{
+				"name": "City",
+				"type": "nvarchar"
+			},
+			{
+				"name": "State",
+				"type": "nvarchar"
+			},
+			{
+				"name": "Zip",
+				"type": "nvarchar"
+			},
+			{
+				"name": "Latitude",
+				"type": "nvarchar"
+			},
+			{
+				"name": "Longitude",
+				"type": "nvarchar"
+			},
+			{
+				"name": "Timezone",
+				"type": "nvarchar"
+			}
+		],
+		"typeProperties": {
+			"schema": "wwi",
+			"table": "PostalCodes"
+		},
+		"sqlPool": {
+			"referenceName": "WWI_Pool",
+			"type": "SqlPoolReference"
+		}
+	},
+	"type": "Microsoft.Synapse/workspaces/datasets"
+}

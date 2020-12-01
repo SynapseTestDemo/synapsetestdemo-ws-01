@@ -1,0 +1,39 @@
+{
+	"name": "JoinSalesAndProduct",
+	"properties": {
+		"type": "MappingDataFlow",
+		"typeProperties": {
+			"sources": [
+				{
+					"dataset": {
+						"referenceName": "SalesOutput",
+						"type": "DatasetReference"
+					},
+					"name": "SalesSource"
+				},
+				{
+					"dataset": {
+						"referenceName": "ProductCSV",
+						"type": "DatasetReference"
+					},
+					"name": "ProductSource"
+				}
+			],
+			"sinks": [
+				{
+					"dataset": {
+						"referenceName": "SalesOutput",
+						"type": "DatasetReference"
+					},
+					"name": "sink1"
+				}
+			],
+			"transformations": [
+				{
+					"name": "Lookup1"
+				}
+			],
+			"script": "source(output(\n\t\tstoreId as short,\n\t\tproductCode as string,\n\t\tquantity as short,\n\t\tlogQuantity as double,\n\t\tadvertising as boolean,\n\t\tprice as short,\n\t\tweekStarting as date,\n\t\tid as string\n\t),\n\tallowSchemaDrift: true,\n\tvalidateSchema: false,\n\tignoreNoFilesFound: false,\n\twildcardPaths:['RetailData/RetailSales.csv']) ~> SalesSource\nsource(output(\n\t\tid as string,\n\t\tproductCode as string,\n\t\tbasePrice as string,\n\t\twholeSaleCost as string\n\t),\n\tallowSchemaDrift: true,\n\tvalidateSchema: false,\n\tignoreNoFilesFound: false) ~> ProductSource\nSalesSource, ProductSource lookup(SalesSource@productCode == ProductSource@productCode,\n\tmultiple: true,\n\tbroadcast: 'auto')~> Lookup1\nLookup1 sink(allowSchemaDrift: true,\n\tvalidateSchema: false,\n\tpartitionFileNames:['SalesFinal.csv'],\n\tpartitionBy('hash', 1),\n\tskipDuplicateMapInputs: true,\n\tskipDuplicateMapOutputs: true) ~> sink1"
+		}
+	}
+}

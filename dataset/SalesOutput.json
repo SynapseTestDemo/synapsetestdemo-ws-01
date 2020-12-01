@@ -1,19 +1,22 @@
 {
-	"name": "StoreData_Parquet_ADLS",
+	"name": "SalesOutput",
 	"properties": {
 		"linkedServiceName": {
 			"referenceName": "wsazuresynapseanalytics-WorkspaceDefaultStorage",
 			"type": "LinkedServiceReference"
 		},
 		"annotations": [],
-		"type": "Parquet",
+		"type": "DelimitedText",
 		"typeProperties": {
 			"location": {
 				"type": "AzureBlobFSLocation",
-				"folderPath": "RetailData",
+				"folderPath": "output",
 				"fileSystem": "default"
 			},
-			"compressionCodec": "snappy"
+			"columnDelimiter": ",",
+			"escapeChar": "\\",
+			"firstRowAsHeader": true,
+			"quoteChar": "\""
 		},
 		"schema": []
 	},

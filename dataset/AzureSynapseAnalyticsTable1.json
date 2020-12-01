@@ -1,0 +1,53 @@
+{
+	"name": "AzureSynapseAnalyticsTable1",
+	"properties": {
+		"linkedServiceName": {
+			"referenceName": "synapsedemosws_sqldb1",
+			"type": "LinkedServiceReference"
+		},
+		"annotations": [],
+		"type": "AzureSqlDWTable",
+		"schema": [
+			{
+				"name": "vendorID",
+				"type": "real",
+				"precision": 7
+			},
+			{
+				"name": "passengerCount",
+				"type": "real",
+				"precision": 7
+			},
+			{
+				"name": "tripDistance",
+				"type": "real",
+				"precision": 7
+			},
+			{
+				"name": "month_num",
+				"type": "real",
+				"precision": 7
+			},
+			{
+				"name": "day_of_month",
+				"type": "real",
+				"precision": 7
+			},
+			{
+				"name": "day_of_week",
+				"type": "real",
+				"precision": 7
+			},
+			{
+				"name": "day_of_hour",
+				"type": "real",
+				"precision": 7
+			}
+		],
+		"typeProperties": {
+			"schema": "dbo",
+			"table": "Trips10"
+		}
+	},
+	"type": "Microsoft.Synapse/workspaces/datasets"
+}

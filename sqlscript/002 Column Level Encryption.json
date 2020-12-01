@@ -1,0 +1,19 @@
+{
+	"name": "002 Column Level Encryption",
+	"properties": {
+		"folder": {
+			"name": "MS Conf scripts"
+		},
+		"content": {
+			"query": "/*******************************************************************************************\nName: 002 Column Level Encryption\nConnect To: WWI_Pool\nUse database: WWI_Pool\nDescription: Showcase Column Level Encryption and decryption (Note: Without certificate key, decryption won't work.)\n*********************************************************************************************/\n\n-- SELECT * FROM [wwi].[EmployeePIIData]  \n\nSELECT  \n    [FirstName]\n    ,[LastName]\n    ,[State]\n    ,[Phone]\n    ,[Email]\n    ,[SSN_encrypted]\nFROM \n    [wwi].[EmployeePIIData] \n\n\n\n-- To get actual(real) SSN value, the encrypted column need to be decrypted with appropriate certificate and corresponding key.\n\n-- Open Key\nOPEN SYMMETRIC KEY Key1 DECRYPTION by CERTIFICATE Cert1 WITH password = 'm9p!T!zJN9#N' --cert password\n--Decrypt the column data\nSELECT \n    [FirstName]\n    ,[LastName]\n    ,[State]\n    ,[Phone]\n    ,[Email]\n    ,[SSN_encrypted] \n    ,CONVERT(NVARCHAR, DECRYPTBYKEY(SSN_Encrypted)) AS [SSN_decrypted] \nFROM [wwi].[EmployeePIIData]\n--Close the symmetric key\nCLOSE SYMMETRIC KEY Key1",
+			"metadata": {
+				"language": "sql"
+			},
+			"currentConnection": {
+				"name": "WWI_Pool",
+				"type": "SqlPool"
+			}
+		},
+		"type": "SqlQuery"
+	}
+}

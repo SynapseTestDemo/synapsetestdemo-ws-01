@@ -1,0 +1,298 @@
+{
+	"name": "009 Predict NYC Taxi Cab Tips",
+	"properties": {
+		"folder": {
+			"name": "Demo notebooks"
+		},
+		"nbformat": 4,
+		"nbformat_minor": 2,
+		"bigDataPool": {
+			"referenceName": "analyticspool",
+			"type": "BigDataPoolReference"
+		},
+		"sessionProperties": {
+			"driverMemory": "28g",
+			"driverCores": 4,
+			"executorMemory": "28g",
+			"executorCores": 4,
+			"numExecutors": 2
+		},
+		"metadata": {
+			"language_info": {
+				"name": "python"
+			},
+			"a365ComputeOptions": {
+				"id": "/subscriptions/7e416de3-c506-4776-8270-83fd73c6cc37/resourceGroups/demosynapserg/providers/Microsoft.Synapse/workspaces/wsazuresynapseanalytics/bigDataPools/analyticspool",
+				"name": "analyticspool",
+				"type": "Spark",
+				"endpoint": "https://wsazuresynapseanalytics.dev.azuresynapse.net/livyApi/versions/2019-11-01-preview/sparkPools/analyticspool",
+				"auth": {
+					"type": "AAD",
+					"authResource": "https://dev.azuresynapse.net"
+				},
+				"sparkVersion": "2.4",
+				"nodeCount": 3,
+				"cores": 8,
+				"memory": 56
+			}
+		},
+		"cells": [
+			{
+				"cell_type": "code",
+				"source": [
+					"import matplotlib.pyplot as plt\n",
+					"from datetime import datetime\n",
+					"from dateutil import parser\n",
+					"from pyspark.sql.functions import unix_timestamp, date_format, col, when\n",
+					"from pyspark.ml import Pipeline\n",
+					"from pyspark.ml import PipelineModel\n",
+					"from pyspark.ml.feature import RFormula\n",
+					"from pyspark.ml.feature import OneHotEncoder, StringIndexer, VectorIndexer\n",
+					"from pyspark.ml.classification import LogisticRegression\n",
+					"from pyspark.mllib.evaluation import BinaryClassificationMetrics\n",
+					"from pyspark.ml.evaluation import BinaryClassificationEvaluator"
+				],
+				"execution_count": 4
+			},
+			{
+				"cell_type": "markdown",
+				"source": [
+					"## Construct the input dataframe\n",
+					""
+				]
+			},
+			{
+				"cell_type": "code",
+				"source": [
+					"from azureml.opendatasets import NycTlcYellow\n",
+					"\n",
+					"end_date = parser.parse('2018-06-06')\n",
+					"start_date = parser.parse('2018-05-01')\n",
+					"nyc_tlc = NycTlcYellow(start_date=start_date, end_date=end_date)\n",
+					"filtered_df = nyc_tlc.to_spark_dataframe()"
+				],
+				"execution_count": 5
+			},
+			{
+				"cell_type": "code",
+				"source": [
+					"# To make development easier, faster and less expensive down sample for now\n",
+					"sampled_taxi_df = filtered_df.sample(True, 0.001, seed=1234)"
+				],
+				"execution_count": 6
+			},
+			{
+				"cell_type": "code",
+				"metadata": {
+					"diagram": {
+						"activateDiagramType": 1,
+						"chartConfig": {
+							"category": "bar",
+							"keys": [
+								"vendorID"
+							],
+							"values": [
+								"passengerCount"
+							],
+							"yLabel": "passengerCount",
+							"xLabel": "vendorID",
+							"aggregation": "SUM",
+							"aggByBackend": false
+						},
+						"aggData": "{\"passengerCount\":{\"1\":522,\"2\":1119}}",
+						"isSummary": false,
+						"previewData": {
+							"filter": null
+						},
+						"isSql": false
+					}
+				},
+				"source": [
+					"#sampled_taxi_df.show(5)\n",
+					"#display(sampled_taxi_df)\n",
+					"sampled_taxi_df.printSchema()"
+				],
+				"execution_count": 7
+			},
+			{
+				"cell_type": "code",
+				"source": [
+					"sampled_taxi_df.createOrReplaceTempView(\"nytaxi\")"
+				],
+				"execution_count": 8
+			},
+			{
+				"cell_type": "markdown",
+				"source": [
+					"## Understand the data\n",
+					""
+				]
+			},
+			{
+				"cell_type": "code",
+				"source": [
+					"# The charting package needs a Pandas dataframe or numpy array do the conversion\n",
+					"sampled_taxi_pd_df = sampled_taxi_df.toPandas()\n",
+					"\n",
+					"# Look at tips by amount count histogram\n",
+					"ax1 = sampled_taxi_pd_df['tipAmount'].plot(kind='hist', bins=25, facecolor='lightblue')\n",
+					"ax1.set_title('Tip amount distribution')\n",
+					"ax1.set_xlabel('Tip Amount ($)')\n",
+					"ax1.set_ylabel('Counts')\n",
+					"plt.suptitle('')\n",
+					"plt.show()\n",
+					"\n",
+					"# How many passengers tip'd by various amounts\n",
+					"ax2 = sampled_taxi_pd_df.boxplot(column=['tipAmount'], by=['passengerCount'])\n",
+					"ax2.set_title('Tip amount by Passenger count')\n",
+					"ax2.set_xlabel('Passenger count')\n",
+					"ax2.set_ylabel('Tip Amount ($)')\n",
+					"plt.suptitle('')\n",
+					"plt.show()\n",
+					"\n",
+					"# Look at the relationship between fare and tip amounts\n",
+					"ax = sampled_taxi_pd_df.plot(kind='scatter', x= 'fareAmount', y = 'tipAmount', c='blue', alpha = 0.10, s=2.5*(sampled_taxi_pd_df['passengerCount']))\n",
+					"ax.set_title('Tip amount by Fare amount')\n",
+					"ax.set_xlabel('Fare Amount ($)')\n",
+					"ax.set_ylabel('Tip Amount ($)')\n",
+					"plt.axis([-2, 80, -2, 20])\n",
+					"plt.suptitle('')\n",
+					"plt.show()"
+				],
+				"execution_count": 9
+			},
+			{
+				"cell_type": "markdown",
+				"source": [
+					"## Prepare the data\n",
+					""
+				]
+			},
+			{
+				"cell_type": "code",
+				"source": [
+					"taxi_df = sampled_taxi_df.select('totalAmount', 'fareAmount', 'tipAmount', 'paymentType', 'rateCodeId', 'passengerCount'\\\n",
+					"                                , 'tripDistance', 'tpepPickupDateTime', 'tpepDropoffDateTime'\\\n",
+					"                                , date_format('tpepPickupDateTime', 'hh').alias('pickupHour')\\\n",
+					"                                , date_format('tpepPickupDateTime', 'EEEE').alias('weekdayString')\\\n",
+					"                                , (unix_timestamp(col('tpepDropoffDateTime')) - unix_timestamp(col('tpepPickupDateTime'))).alias('tripTimeSecs')\\\n",
+					"                                , (when(col('tipAmount') > 0, 1).otherwise(0)).alias('tipped')\n",
+					"                                )\\\n",
+					"                        .filter((sampled_taxi_df.passengerCount > 0) & (sampled_taxi_df.passengerCount < 8)\\\n",
+					"                                & (sampled_taxi_df.tipAmount >= 0) & (sampled_taxi_df.tipAmount <= 25)\\\n",
+					"                                & (sampled_taxi_df.fareAmount >= 1) & (sampled_taxi_df.fareAmount <= 250)\\\n",
+					"                                & (sampled_taxi_df.tipAmount < sampled_taxi_df.fareAmount)\\\n",
+					"                                & (sampled_taxi_df.tripDistance > 0) & (sampled_taxi_df.tripDistance <= 100)\\\n",
+					"                                & (sampled_taxi_df.rateCodeId <= 5)\n",
+					"                                & (sampled_taxi_df.paymentType.isin({\"1\", \"2\"}))\n",
+					"                                )"
+				],
+				"execution_count": 11
+			},
+			{
+				"cell_type": "code",
+				"source": [
+					"taxi_featurised_df = taxi_df.select('totalAmount', 'fareAmount', 'tipAmount', 'paymentType', 'passengerCount'\\\n",
+					"                                                , 'tripDistance', 'weekdayString', 'pickupHour','tripTimeSecs','tipped'\\\n",
+					"                                                , when((taxi_df.pickupHour <= 6) | (taxi_df.pickupHour >= 20),\"Night\")\\\n",
+					"                                                .when((taxi_df.pickupHour >= 7) & (taxi_df.pickupHour <= 10), \"AMRush\")\\\n",
+					"                                                .when((taxi_df.pickupHour >= 11) & (taxi_df.pickupHour <= 15), \"Afternoon\")\\\n",
+					"                                                .when((taxi_df.pickupHour >= 16) & (taxi_df.pickupHour <= 19), \"PMRush\")\\\n",
+					"                                                .otherwise(0).alias('trafficTimeBins')\n",
+					"                                              )\\\n",
+					"                                       .filter((taxi_df.tripTimeSecs >= 30) & (taxi_df.tripTimeSecs <= 7200))"
+				],
+				"execution_count": 12
+			},
+			{
+				"cell_type": "markdown",
+				"source": [
+					"## Create a logistic regression model\n",
+					""
+				]
+			},
+			{
+				"cell_type": "code",
+				"source": [
+					"# The sample uses an algorithm that only works with numeric features convert them so they can be consumed\n",
+					"sI1 = StringIndexer(inputCol=\"trafficTimeBins\", outputCol=\"trafficTimeBinsIndex\")\n",
+					"en1 = OneHotEncoder(dropLast=False, inputCol=\"trafficTimeBinsIndex\", outputCol=\"trafficTimeBinsVec\")\n",
+					"sI2 = StringIndexer(inputCol=\"weekdayString\", outputCol=\"weekdayIndex\")\n",
+					"en2 = OneHotEncoder(dropLast=False, inputCol=\"weekdayIndex\", outputCol=\"weekdayVec\")\n",
+					"\n",
+					"# Create a new dataframe that has had the encodings applied\n",
+					"encoded_final_df = Pipeline(stages=[sI1, en1, sI2, en2]).fit(taxi_featurised_df).transform(taxi_featurised_df)"
+				],
+				"execution_count": 13
+			},
+			{
+				"cell_type": "markdown",
+				"source": [
+					"## Train a logistic regression model\n",
+					""
+				]
+			},
+			{
+				"cell_type": "code",
+				"source": [
+					"#Decide on the split between training and testing data from the dataframe\n",
+					"trainingFraction = 0.7\n",
+					"testingFraction = (1-trainingFraction)\n",
+					"seed = 1234\n",
+					"\n",
+					"# Split the dataframe into test and training dataframes\n",
+					"train_data_df, test_data_df = encoded_final_df.randomSplit([trainingFraction, testingFraction], seed=seed)"
+				],
+				"execution_count": 14
+			},
+			{
+				"cell_type": "code",
+				"source": [
+					"## Create a new LR object for the model\n",
+					"logReg = LogisticRegression(maxIter=10, regParam=0.3, labelCol = 'tipped')\n",
+					"\n",
+					"## The formula for the model\n",
+					"classFormula = RFormula(formula=\"tipped ~ pickupHour + weekdayVec + passengerCount + tripTimeSecs + tripDistance + fareAmount + paymentType+ trafficTimeBinsVec\")\n",
+					"\n",
+					"## Undertake training and create an LR model\n",
+					"lrModel = Pipeline(stages=[classFormula, logReg]).fit(train_data_df)\n",
+					"\n",
+					"## Saving the model is optional but its another form of inter session cache\n",
+					"datestamp = datetime.now().strftime('%m-%d-%Y-%s')\n",
+					"fileName = \"lrModel_\" + datestamp\n",
+					"logRegDirfilename = fileName\n",
+					"lrModel.save(logRegDirfilename)\n",
+					"\n",
+					"## Predict tip 1/0 (yes/no) on the test dataset, evaluation using AUROC\n",
+					"predictions = lrModel.transform(test_data_df)\n",
+					"predictionAndLabels = predictions.select(\"label\",\"prediction\").rdd\n",
+					"metrics = BinaryClassificationMetrics(predictionAndLabels)\n",
+					"print(\"Area under ROC = %s\" % metrics.areaUnderROC)"
+				],
+				"execution_count": 15
+			},
+			{
+				"cell_type": "markdown",
+				"source": [
+					"## Create a visual representation of the prediction\n",
+					""
+				]
+			},
+			{
+				"cell_type": "code",
+				"source": [
+					"## Plot the ROC curve, no need for pandas as this uses the modelSummary object\n",
+					"modelSummary = lrModel.stages[-1].summary\n",
+					"\n",
+					"plt.plot([0, 1], [0, 1], 'r--')\n",
+					"plt.plot(modelSummary.roc.select('FPR').collect(),\n",
+					"         modelSummary.roc.select('TPR').collect())\n",
+					"plt.xlabel('False Positive Rate')\n",
+					"plt.ylabel('True Positive Rate')\n",
+					"plt.show()"
+				],
+				"execution_count": 16
+			}
+		]
+	}
+}

@@ -1,0 +1,19 @@
+{
+	"name": "Score Retail Data",
+	"properties": {
+		"folder": {
+			"name": "Set up scripts"
+		},
+		"content": {
+			"query": "\nSELECT *\nFROM \n    PREDICT (MODEL = (SELECT [model] FROM dbo.AMLModels \nWHERE \n    [ID] = 'synapse_retail_model_onnx:1'),\nDATA = [dbo].[RetailData]) \nWITH \n    ([quantity] [real])\n",
+			"metadata": {
+				"language": "sql"
+			},
+			"currentConnection": {
+				"name": "Predict_Pool",
+				"type": "SqlPool"
+			}
+		},
+		"type": "SqlQuery"
+	}
+}

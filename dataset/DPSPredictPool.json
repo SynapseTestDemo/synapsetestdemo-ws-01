@@ -1,0 +1,108 @@
+{
+	"name": "DPSPredictPool",
+	"properties": {
+		"annotations": [],
+		"type": "SqlPoolTable",
+		"schema": [
+			{
+				"name": "productCode",
+				"type": "float",
+				"precision": 15
+			},
+			{
+				"name": "price",
+				"type": "float",
+				"precision": 15
+			},
+			{
+				"name": "advertising",
+				"type": "float",
+				"precision": 15
+			},
+			{
+				"name": "storeId",
+				"type": "float",
+				"precision": 15
+			},
+			{
+				"name": "weekStarting",
+				"type": "float",
+				"precision": 15
+			},
+			{
+				"name": "wholeSaleCost",
+				"type": "float",
+				"precision": 15
+			},
+			{
+				"name": "basePrice",
+				"type": "float",
+				"precision": 15
+			},
+			{
+				"name": "income",
+				"type": "float",
+				"precision": 15
+			},
+			{
+				"name": "minoritiesRatio",
+				"type": "float",
+				"precision": 15
+			},
+			{
+				"name": "largeHH",
+				"type": "float",
+				"precision": 15
+			},
+			{
+				"name": "highIncome150Ratio",
+				"type": "float",
+				"precision": 15
+			},
+			{
+				"name": "more1FullTimeEmployeeRatio",
+				"type": "float",
+				"precision": 15
+			},
+			{
+				"name": "ratioAge60",
+				"type": "float",
+				"precision": 15
+			},
+			{
+				"name": "salesNearestWarehousesRatio",
+				"type": "float",
+				"precision": 15
+			},
+			{
+				"name": "salesNearest5StoresRatio",
+				"type": "float",
+				"precision": 15
+			},
+			{
+				"name": "collegeRatio",
+				"type": "float",
+				"precision": 15
+			},
+			{
+				"name": "avgDistanceNearest5Supermarkets",
+				"type": "float",
+				"precision": 15
+			},
+			{
+				"name": "distanceNearestWarehouse",
+				"type": "float",
+				"precision": 15
+			}
+		],
+		"typeProperties": {
+			"schema": "dbo",
+			"table": "RetailData"
+		},
+		"sqlPool": {
+			"referenceName": "Predict_Pool",
+			"type": "SqlPoolReference"
+		}
+	},
+	"type": "Microsoft.Synapse/workspaces/datasets"
+}

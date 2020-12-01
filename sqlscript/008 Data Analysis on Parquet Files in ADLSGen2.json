@@ -1,0 +1,19 @@
+{
+	"name": "008 Data Analysis on Parquet Files in ADLSGen2",
+	"properties": {
+		"folder": {
+			"name": "Set up scripts"
+		},
+		"content": {
+			"query": "/*******************************************************************************************\nName: 008 Data Analysis on Parquet Files in ADLSGen2 \nConnect To: SQL on-demand\nUse database: master\nDescription: Use SQL on-demand to read data from data lake and analyze it\n*********************************************************************************************/\n\n\nSELECT\n    StoreId \n    ,productCode\n    ,SUM(cast(quantity as float)) as totalQuantity\nFROM\n    OPENROWSET(\n        BULK 'https://azuresynapsesa.dfs.core.windows.net/default/SurfaceRetailSalessurfaceretailsales.parquet/*',\n        FORMAT='PARQUET'\n    ) AS [result]\nGroup By StoreId, productCode\nOrder by totalQuantity desc\n",
+			"metadata": {
+				"language": "sql"
+			},
+			"currentConnection": {
+				"name": "master",
+				"type": "SqlOnDemand"
+			}
+		},
+		"type": "SqlQuery"
+	}
+}

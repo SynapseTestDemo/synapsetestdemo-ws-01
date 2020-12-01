@@ -1,0 +1,19 @@
+{
+	"name": "Full fidelity schema",
+	"properties": {
+		"folder": {
+			"name": "Set up scripts"
+		},
+		"content": {
+			"query": "-- type your sql script here, we now have intellisense\n\n-- Specify schema\nSELECT *\nFROM OPENROWSET ('CosmosDB',\n  'Account=lbosq-mongo-synapse;Database=test;region=WestUS2;Key=safFnUlXivshgFi1flrWnSk7KK2Tf6xNA6WBXWZffjl6HFM9V6XYML4tERD0su6nwheelnxQk0y6XDjKwjPFJw==',\n  docTest\n) WITH (\n        productSKU varchar(256) '$.productSKU.string',\n        price_float float '$.price.float64',\n        price_int32 bigint '$.price.int32',\n        purchaseDate_string varchar(256) '$.purchaseDate.string',\n        purchaseDate_int32 bigint '$.purchaseDate.int32',\n        product\n)\nAS p\nGO",
+			"metadata": {
+				"language": "sql"
+			},
+			"currentConnection": {
+				"name": "master",
+				"type": "SqlOnDemand"
+			}
+		},
+		"type": "SqlQuery"
+	}
+}

@@ -1,0 +1,19 @@
+{
+	"name": "005 Predict In-Engine Scoring",
+	"properties": {
+		"folder": {
+			"name": "Demo scripts"
+		},
+		"content": {
+			"query": "/*******************************************************************************************\nName: 005 Predict In-Engine Scoring\nConnect To: NYCTaxi_Pool\nUse database: NYCTaxi_Pool\nDescription: Showcase in-engine scoring with data in dedicated SQL pool and ONNX model.\n*********************************************************************************************/ \n-- PREDICTIVE MODELS TABLE\nSELECT * FROM Models;\n\n-- TRIPS DATA TABLE\nselect * from dbo.Trips\n\n-- quick predict\nSELECT TOP 10\n       [vendorID],\n       [passengerCount],\n       [tripDistance],\n       [month_num],\n       [day_of_month],\n       [day_of_week],\n       [day_of_hour],\n       [totalAmount]\nFROM PREDICT (model = (SELECT Model FROM Models WHERE Id = 60), Data = dbo.Trips) WITH (totalAmount float)\n\n\n-- NEXT PREDICTIONS INTO A MORE COMPLEX QUERY\n--DECLARE @model varbinary(max) = (SELECT Model FROM Models WHERE Id = 60);\nSELECT\n\tPassengerCount,\n\tTripCount,\n\tAvgTripAmount,\n\tRANK() OVER (ORDER BY AvgTripAmount DESC) AS RankTripAmount\nFROM (\n\tSELECT \n\t\t   [passengerCount] as PassengerCount,\n\t\t   COUNT(*) as TripCount,\n\t\t   AVG([totalAmount]) as AvgTripAmount\n\tFROM PREDICT (model = (SELECT Model FROM Models WHERE Id = 60), Data = dbo.Trips) WITH (totalAmount float)\n\tGROUP BY\n\t\t[passengerCount]) SubQ\nORDER BY\n\tPassengerCount",
+			"metadata": {
+				"language": "sql"
+			},
+			"currentConnection": {
+				"name": "NYCTaxi_Pool",
+				"type": "SqlPool"
+			}
+		},
+		"type": "SqlQuery"
+	}
+}

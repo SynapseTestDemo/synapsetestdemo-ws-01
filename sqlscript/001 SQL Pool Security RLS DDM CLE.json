@@ -1,0 +1,19 @@
+{
+	"name": "001 SQL Pool Security RLS DDM CLE",
+	"properties": {
+		"folder": {
+			"name": "Demo scripts"
+		},
+		"content": {
+			"query": "/*******************************************************************************************\nName: 001 SQL Pool Security RLS DDM CLE \nConnect To: WWI_Pool\nUse database: WWI_Pool\nDescription: Showcase dedicated SQL pool features to secure data \n            1. Row Level Security\n            2. Dynamic Data Masking\n            3. Column Level Encryption\n*********************************************************************************************/\n\n--Returns records for CA state\nEXECUTE AS USER ='charlesf@microsoft.com'\nSELECT \n    Count(*) as EmployeeCount\nFROM \n    wwi.EmployeePIIData;\n\nSELECT \n    [FirstName]\n    ,[LastName]\n    ,[State]\n    ,[Phone]\n    ,[Email]\n    ,[SSN_encrypted]\nFROM \n    wwi.EmployeePIIData ;\nrevert\n\n\n\n--Returns records for PA and NY state\nEXECUTE AS USER ='prlangad@microsoft.com'\nSELECT \n    Count(*) as EmployeeCount\nFROM \n    wwi.EmployeePIIData;\n\nSELECT \n    [FirstName]\n    ,[LastName]\n    ,[State]\n    ,[Phone]\n    ,[Email]\n    ,[SSN_encrypted]\nFROM \n    wwi.EmployeePIIData;\nrevert\n\n\n-- To get actual(real) SSN value, the encrypted column need to be decrypted with appropriate certificate and corresponding key.\n\n-- Open Key\nOPEN SYMMETRIC KEY Key1 DECRYPTION by CERTIFICATE Cert1 WITH password = 'm9p!T!zJN9#N' --cert password\n--Decrypt the column data\nEXECUTE AS USER ='prlangad@microsoft.com'\nSELECT \n    [FirstName]\n    ,[LastName]\n    ,[State]\n    ,[Phone]\n    ,[Email]\n    ,[SSN_encrypted] \n    ,CONVERT(NVARCHAR, DECRYPTBYKEY(SSN_Encrypted)) AS [SSN_decrypted] \nFROM [wwi].[EmployeePIIData]\n--Close the symmetric key\nCLOSE SYMMETRIC KEY Key1\n\n",
+			"metadata": {
+				"language": "sql"
+			},
+			"currentConnection": {
+				"name": "WWI_Pool",
+				"type": "SqlPool"
+			}
+		},
+		"type": "SqlQuery"
+	}
+}

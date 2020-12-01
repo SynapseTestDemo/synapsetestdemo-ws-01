@@ -1,0 +1,87 @@
+{
+	"name": "01 CosmosDB Data Exploration",
+	"properties": {
+		"folder": {
+			"name": "Demo notebooks"
+		},
+		"nbformat": 4,
+		"nbformat_minor": 2,
+		"bigDataPool": {
+			"referenceName": "analyticspool",
+			"type": "BigDataPoolReference"
+		},
+		"sessionProperties": {
+			"driverMemory": "28g",
+			"driverCores": 4,
+			"executorMemory": "28g",
+			"executorCores": 4,
+			"numExecutors": 2
+		},
+		"metadata": {
+			"kernelspec": {
+				"name": "synapse_pyspark",
+				"display_name": "Synapse PySpark"
+			},
+			"language_info": {
+				"name": "python"
+			},
+			"a365ComputeOptions": {
+				"id": "/subscriptions/7e416de3-c506-4776-8270-83fd73c6cc37/resourceGroups/demosynapserg/providers/Microsoft.Synapse/workspaces/wsazuresynapseanalytics/bigDataPools/analyticspool",
+				"name": "analyticspool",
+				"type": "Spark",
+				"endpoint": "https://wsazuresynapseanalytics.dev.azuresynapse.net/livyApi/versions/2019-11-01-preview/sparkPools/analyticspool",
+				"auth": {
+					"type": "AAD",
+					"authResource": "https://dev.azuresynapse.net"
+				},
+				"sparkVersion": "2.4",
+				"nodeCount": 3,
+				"cores": 8,
+				"memory": 56
+			}
+		},
+		"cells": [
+			{
+				"cell_type": "code",
+				"metadata": {
+					"diagram": {
+						"activateDiagramType": 1,
+						"chartConfig": {
+							"category": "bar",
+							"keys": [
+								"_rid"
+							],
+							"values": [
+								"_ts"
+							],
+							"yLabel": "_ts",
+							"xLabel": "_rid",
+							"aggregation": "SUM",
+							"aggByBackend": false
+						},
+						"aggData": "\"{\\\"_ts\\\":{\\\"sY0TAIh7N8gBAAAAAAAABA==\\\":1598476494,\\\"sY0TAIh7N8gCAAAAAAAABA==\\\":1598476494,\\\"sY0TAIh7N8gDAAAAAAAABA==\\\":1598476494}}\"",
+						"isSummary": false,
+						"previewData": {
+							"filter": null
+						},
+						"isSql": false
+					}
+				},
+				"source": [
+					"# Read from Cosmos DB analytical store into a Spark DataFrame and display 10 rows from the DataFrame\n",
+					"# To select a preferred list of regions in a multi-region Cosmos DB account, add .option(\"spark.cosmos.preferredRegions\", \"<Region1>,<Region2>\")\n",
+					"\n",
+					"df = spark.read\\\n",
+					"    .format(\"cosmos.olap\")\\\n",
+					"    .option(\"spark.synapse.linkedService\", \"RetailSalesDemoDB\")\\\n",
+					"    .option(\"spark.cosmos.container\", \"Products\")\\\n",
+					"    .load()\n",
+					"\n",
+					"display(df.limit(10))"
+				],
+				"attachments": null,
+				"execution_count": 1
+			}
+		]
+	}
+}

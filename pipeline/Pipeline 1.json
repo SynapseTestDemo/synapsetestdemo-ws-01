@@ -1,0 +1,65 @@
+{
+	"name": "Pipeline 1",
+	"properties": {
+		"activities": [
+			{
+				"name": "PrepSalesData",
+				"description": "Here is where we use Power Query to prep the retail sales data for training our models.",
+				"type": "ExecuteWranglingDataflow",
+				"dependsOn": [],
+				"policy": {
+					"timeout": "7.00:00:00",
+					"retry": 0,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"dataflow": {
+						"referenceName": "PQSalesPrep",
+						"type": "DataFlowReference"
+					},
+					"integrationRuntime": {
+						"referenceName": "AutoResolveIntegrationRuntime",
+						"type": "IntegrationRuntimeReference"
+					}
+				}
+			},
+			{
+				"name": "JoinSalesProducts",
+				"type": "ExecuteDataFlow",
+				"dependsOn": [
+					{
+						"activity": "PrepSalesData",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"policy": {
+					"timeout": "7.00:00:00",
+					"retry": 0,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"dataflow": {
+						"referenceName": "JoinSalesAndProduct",
+						"type": "DataFlowReference"
+					},
+					"compute": {
+						"coreCount": 8,
+						"computeType": "General"
+					},
+					"traceLevel": "Fine"
+				}
+			}
+		],
+		"annotations": [],
+		"lastPublishTime": "2020-09-11T16:13:28Z"
+	},
+	"type": "Microsoft.Synapse/workspaces/pipelines"
+}

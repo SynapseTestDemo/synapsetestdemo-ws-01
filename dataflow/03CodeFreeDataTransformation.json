@@ -1,0 +1,55 @@
+{
+	"name": "03CodeFreeDataTransformation",
+	"properties": {
+		"type": "MappingDataFlow",
+		"typeProperties": {
+			"sources": [
+				{
+					"dataset": {
+						"referenceName": "ADLS_DimCustomer_CSV",
+						"type": "DatasetReference"
+					},
+					"name": "RawCustomerData"
+				},
+				{
+					"dataset": {
+						"referenceName": "ADLS_FactSales_CSV",
+						"type": "DatasetReference"
+					},
+					"name": "RawSalesData"
+				}
+			],
+			"sinks": [
+				{
+					"dataset": {
+						"referenceName": "SQLPool_TransformedSalesData",
+						"type": "DatasetReference"
+					},
+					"name": "TransformedSalesData"
+				},
+				{
+					"dataset": {
+						"referenceName": "SQLPool_CustSalesAgg",
+						"type": "DatasetReference"
+					},
+					"name": "CustSalesAggregated"
+				}
+			],
+			"transformations": [
+				{
+					"name": "Select1"
+				},
+				{
+					"name": "Join1"
+				},
+				{
+					"name": "Aggregate1"
+				},
+				{
+					"name": "Select2"
+				}
+			],
+			"script": "source(output(\n\t\t{Customer Key} as string,\n\t\t{WWI Customer ID} as string,\n\t\tCustomer as string,\n\t\t{Bill To Customer} as string,\n\t\tCategory as string,\n\t\t{Buying Group} as string,\n\t\t{Primary Contact} as string,\n\t\t{Postal Code} as string,\n\t\t{Valid From} as string,\n\t\t{Valid To} as string,\n\t\t{Lineage Key} as string\n\t),\n\tallowSchemaDrift: true,\n\tvalidateSchema: false,\n\tignoreNoFilesFound: false) ~> RawCustomerData\nsource(output(\n\t\t{Sale Key} as string,\n\t\t{City Key} as string,\n\t\t{Customer Key} as string,\n\t\t{Bill To Customer Key} as string,\n\t\t{Stock Item Key} as string,\n\t\t{Invoice Date Key} as string,\n\t\t{Delivery Date Key} as string,\n\t\t{Salesperson Key} as string,\n\t\t{WWI Invoice ID} as string,\n\t\tDescription as string,\n\t\tPackage as string,\n\t\tQuantity as string,\n\t\t{Unit Price} as string,\n\t\t{Tax Rate} as string,\n\t\t{Total Excluding Tax} as string,\n\t\t{Tax Amount} as string,\n\t\tProfit as string,\n\t\t{Total Including Tax} as string,\n\t\t{Total Dry Items} as string,\n\t\t{Total Chiller Items} as string,\n\t\t{Lineage Key} as string\n\t),\n\tallowSchemaDrift: true,\n\tvalidateSchema: false,\n\tignoreNoFilesFound: false) ~> RawSalesData\nRawSalesData select(mapColumn(\n\t\tSaleKey = {Sale Key},\n\t\tCityKey = {City Key},\n\t\tCustomerKey = {Customer Key},\n\t\tBillToCustomerKey = {Bill To Customer Key},\n\t\tStockItemKey = {Stock Item Key},\n\t\tInvoiceDateKey = {Invoice Date Key},\n\t\tDeliveryDateKey = {Delivery Date Key},\n\t\tSalespersonKey = {Salesperson Key},\n\t\tWWIInvoiceID = {WWI Invoice ID},\n\t\tPackage,\n\t\tQuantity,\n\t\tUnitPrice = {Unit Price},\n\t\tTaxRate = {Tax Rate},\n\t\tTotalExcludingTax = {Total Excluding Tax},\n\t\tTaxAmount = {Tax Amount},\n\t\tProfit,\n\t\tTotalIncludingTax = {Total Including Tax},\n\t\tTotalDryItems = {Total Dry Items},\n\t\tTotalChillerItems = {Total Chiller Items}\n\t),\n\tskipDuplicateMapInputs: true,\n\tskipDuplicateMapOutputs: true) ~> Select1\nSelect2, Select1 join(Select2@CustomerKey == Select1@CustomerKey,\n\tjoinType:'inner',\n\tbroadcast: 'auto')~> Join1\nJoin1 aggregate(groupBy(Select2@CustomerKey),\n\tQuantity = sum(toInteger(Quantity)),\n\t\tProfit = sum(toDouble(Profit)),\n\t\tSaleKey = count(SaleKey)) ~> Aggregate1\nRawCustomerData select(mapColumn(\n\t\tCustomerKey = {Customer Key},\n\t\tCustomer,\n\t\tBillToCustomer = {Bill To Customer},\n\t\tCategory,\n\t\tBuyingGroup = {Buying Group},\n\t\tPrimaryContact = {Primary Contact}\n\t),\n\tskipDuplicateMapInputs: true,\n\tskipDuplicateMapOutputs: true) ~> Select2\nSelect1 sink(allowSchemaDrift: true,\n\tvalidateSchema: false,\n\tdeletable:false,\n\tinsertable:true,\n\tupdateable:false,\n\tupsertable:false,\n\tformat: 'table',\n\tstaged: true,\n\tskipDuplicateMapInputs: true,\n\tskipDuplicateMapOutputs: true) ~> TransformedSalesData\nAggregate1 sink(allowSchemaDrift: true,\n\tvalidateSchema: false,\n\tdeletable:false,\n\tinsertable:true,\n\tupdateable:false,\n\tupsertable:false,\n\tformat: 'table',\n\tstaged: true,\n\tskipDuplicateMapInputs: true,\n\tskipDuplicateMapOutputs: true) ~> CustSalesAggregated"
+		}
+	}
+}

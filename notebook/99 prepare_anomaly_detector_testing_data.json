@@ -1,0 +1,79 @@
+{
+	"name": "99 prepare_anomaly_detector_testing_data",
+	"properties": {
+		"folder": {
+			"name": "Test notebooks"
+		},
+		"nbformat": 4,
+		"nbformat_minor": 2,
+		"bigDataPool": {
+			"referenceName": "analytics1",
+			"type": "BigDataPoolReference"
+		},
+		"sessionProperties": {
+			"driverMemory": "56g",
+			"driverCores": 8,
+			"executorMemory": "56g",
+			"executorCores": 8,
+			"numExecutors": 2,
+			"conf": {
+				"spark.dynamicAllocation.enabled": "false",
+				"spark.dynamicAllocation.minExecutors": "2",
+				"spark.dynamicAllocation.maxExecutors": "2"
+			}
+		},
+		"metadata": {
+			"language_info": {
+				"name": "python"
+			},
+			"a365ComputeOptions": {
+				"id": "/subscriptions/7e416de3-c506-4776-8270-83fd73c6cc37/resourceGroups/demosynapserg/providers/Microsoft.Synapse/workspaces/wsazuresynapseanalytics/bigDataPools/analytics1",
+				"name": "analytics1",
+				"type": "Spark",
+				"endpoint": "https://wsazuresynapseanalytics.dev.azuresynapse.net/livyApi/versions/2019-11-01-preview/sparkPools/analytics1",
+				"auth": {
+					"type": "AAD",
+					"authResource": "https://dev.azuresynapse.net"
+				},
+				"sparkVersion": "2.4",
+				"nodeCount": 10,
+				"cores": 8,
+				"memory": 56
+			}
+		},
+		"cells": [
+			{
+				"cell_type": "code",
+				"source": [
+					"from pyspark.sql.functions import lit\n",
+					"\n",
+					"df = spark.createDataFrame([\n",
+					"    (\"1972-01-01T00:00:00Z\", 826.0),\n",
+					"    (\"1972-02-01T00:00:00Z\", 799.0),\n",
+					"    (\"1972-03-01T00:00:00Z\", 890.0),\n",
+					"    (\"1972-04-01T00:00:00Z\", 900.0),\n",
+					"    (\"1972-05-01T00:00:00Z\", 766.0),\n",
+					"    (\"1972-06-01T00:00:00Z\", 805.0),\n",
+					"    (\"1972-07-01T00:00:00Z\", 821.0),\n",
+					"    (\"1972-08-01T00:00:00Z\", 20000.0),\n",
+					"    (\"1972-09-01T00:00:00Z\", 883.0),\n",
+					"    (\"1972-10-01T00:00:00Z\", 898.0),\n",
+					"    (\"1972-11-01T00:00:00Z\", 957.0),\n",
+					"    (\"1972-12-01T00:00:00Z\", 924.0),\n",
+					"    (\"1973-01-01T00:00:00Z\", 881.0),\n",
+					"    (\"1973-02-01T00:00:00Z\", 837.0),\n",
+					"    (\"1973-03-01T00:00:00Z\", 9000.0)\n",
+					"], [\"timestamp\", \"value\"]).withColumn(\"group\", lit(\"series1\"))"
+				],
+				"execution_count": null
+			},
+			{
+				"cell_type": "code",
+				"source": [
+					"df.write.mode(\"overwrite\").saveAsTable(\"anomaly_detector_testing_data\")"
+				],
+				"execution_count": null
+			}
+		]
+	}
+}

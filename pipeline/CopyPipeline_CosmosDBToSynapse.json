@@ -1,0 +1,119 @@
+{
+	"name": "CopyPipeline_CosmosDBToSynapse",
+	"properties": {
+		"activities": [
+			{
+				"name": "ForEach_dm8",
+				"type": "ForEach",
+				"dependsOn": [],
+				"userProperties": [],
+				"typeProperties": {
+					"items": {
+						"value": "@pipeline().parameters.cw_items",
+						"type": "Expression"
+					},
+					"activities": [
+						{
+							"name": "Copy_dm8",
+							"type": "Copy",
+							"dependsOn": [],
+							"policy": {
+								"timeout": "7.00:00:00",
+								"retry": 0,
+								"retryIntervalInSeconds": 30,
+								"secureOutput": false,
+								"secureInput": false
+							},
+							"userProperties": [
+								{
+									"name": "Source",
+									"value": "@{item().source.collectionName}"
+								},
+								{
+									"name": "Destination",
+									"value": "dbo.@{item().destination.table}"
+								}
+							],
+							"typeProperties": {
+								"source": {
+									"type": "CosmosDbSqlApiSource",
+									"preferredRegions": []
+								},
+								"sink": {
+									"type": "SqlPoolSink",
+									"allowPolyBase": true,
+									"polyBaseSettings": {
+										"rejectValue": 0,
+										"rejectType": "value",
+										"useTypeDefault": true
+									},
+									"tableOption": "autoCreate"
+								},
+								"enableStaging": true,
+								"stagingSettings": {
+									"linkedServiceName": {
+										"referenceName": "SynapseLoadStaging",
+										"type": "LinkedServiceReference"
+									},
+									"path": "staging"
+								}
+							},
+							"inputs": [
+								{
+									"referenceName": "SourceDataset_dm8",
+									"type": "DatasetReference",
+									"parameters": {
+										"cw_collectionName": "@item().source.collectionName"
+									}
+								}
+							],
+							"outputs": [
+								{
+									"referenceName": "DestinationDataset_dm8",
+									"type": "DatasetReference",
+									"parameters": {
+										"cw_table": "@item().destination.table"
+									}
+								}
+							]
+						}
+					]
+				}
+			}
+		],
+		"parameters": {
+			"cw_items": {
+				"type": "Array",
+				"defaultValue": [
+					{
+						"source": {
+							"collectionName": "Products"
+						},
+						"destination": {
+							"table": "Products"
+						}
+					},
+					{
+						"source": {
+							"collectionName": "RetailSales"
+						},
+						"destination": {
+							"table": "RetailSales"
+						}
+					},
+					{
+						"source": {
+							"collectionName": "StoreDemoGraphics"
+						},
+						"destination": {
+							"table": "StoreDemoGraphics"
+						}
+					}
+				]
+			}
+		},
+		"annotations": [],
+		"lastPublishTime": "2020-09-09T01:39:39Z"
+	},
+	"type": "Microsoft.Synapse/workspaces/pipelines"
+}

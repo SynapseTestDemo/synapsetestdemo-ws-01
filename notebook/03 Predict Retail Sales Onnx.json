@@ -1,0 +1,405 @@
+{
+	"name": "03 Predict Retail Sales Onnx",
+	"properties": {
+		"folder": {
+			"name": "Test notebooks"
+		},
+		"nbformat": 4,
+		"nbformat_minor": 2,
+		"bigDataPool": {
+			"referenceName": "AnalyticsPool99",
+			"type": "BigDataPoolReference"
+		},
+		"sessionProperties": {
+			"driverMemory": "28g",
+			"driverCores": 4,
+			"executorMemory": "28g",
+			"executorCores": 4,
+			"numExecutors": 2
+		},
+		"metadata": {
+			"kernelspec": {
+				"name": "python_defaultSpec_1599520475833",
+				"display_name": "Python 3.6.7 64-bit"
+			},
+			"language_info": {
+				"name": "python"
+			},
+			"a365ComputeOptions": {
+				"id": "/subscriptions/7e416de3-c506-4776-8270-83fd73c6cc37/resourceGroups/demosynapserg/providers/Microsoft.Synapse/workspaces/wsazuresynapseanalytics/bigDataPools/AnalyticsPool99",
+				"name": "AnalyticsPool99",
+				"type": "Spark",
+				"endpoint": "https://wsazuresynapseanalytics.dev.azuresynapse.net/livyApi/versions/2019-11-01-preview/sparkPools/AnalyticsPool99",
+				"auth": {
+					"type": "AAD",
+					"authResource": "https://dev.azuresynapse.net"
+				},
+				"sparkVersion": "2.4",
+				"nodeCount": 10,
+				"cores": 8,
+				"memory": 56
+			}
+		},
+		"cells": [
+			{
+				"cell_type": "markdown",
+				"source": [
+					"# Near real-time sales forecasting leveraging Synapse Link for Azure Cosmos DB\n",
+					"\n",
+					"Microsoft Retail Store has built its new-age supply chain management system on Azure Cosmos DB.\n",
+					"\n",
+					"The supply chain management system tracks retail operations across 1000s of locations across the world and tracks inventory across the 100s of Microsoft product SKUs sold.\n",
+					"\n",
+					"This notebook shows the power of Synapse Link for Cosmos DB to be able to run near real-time analytics over operational data, without ETL and without impact to transactional workloads.\n",
+					"\n",
+					"In particular, the **goal here is to build a sales forecasting model to help store locations customize their inventory planning in real-time based on flucutations in demand.**\n",
+					"\n",
+					"<img src=\"https://cosmosnotebooksdata.blob.core.windows.net/notebookdata/store.PNG\" alt=\"Surface Device\" width=\"75%\"/>\n",
+					"\n",
+					"&nbsp;\n",
+					""
+				]
+			},
+			{
+				"cell_type": "code",
+				"source": [
+					"import time\n",
+					"import numpy as np\n",
+					"import pandas as pd\n",
+					"import onnxruntime as ort\n",
+					"import hummingbird.ml\n",
+					"\n",
+					"from datetime import datetime\n",
+					"from timeit import default_timer as timer\n",
+					"from sklearn.ensemble import RandomForestRegressor\n",
+					"from sklearn.model_selection import train_test_split\n",
+					"from sklearn.pipeline import Pipeline\n",
+					"from sklearn.preprocessing import StandardScaler\n",
+					"from sklearn.compose import ColumnTransformer\n",
+					"from skl2onnx import convert_sklearn\n",
+					"from skl2onnx.common.data_types import FloatTensorType"
+				],
+				"attachments": null,
+				"execution_count": 9
+			},
+			{
+				"cell_type": "code",
+				"metadata": {
+					"diagram": {
+						"activateDiagramType": 1,
+						"chartConfig": {
+							"category": "bar",
+							"keys": [
+								"_rid"
+							],
+							"values": [
+								"_ts"
+							],
+							"yLabel": "_ts",
+							"xLabel": "_rid",
+							"aggregation": "SUM",
+							"aggByBackend": false
+						},
+						"aggData": "{\"_ts\":{\"sY0TAIh7N8gBAAAAAAAABA==\":1598476494,\"sY0TAIh7N8gCAAAAAAAABA==\":1598476494,\"sY0TAIh7N8gDAAAAAAAABA==\":1598476494}}",
+						"isSummary": false,
+						"previewData": {
+							"filter": null
+						},
+						"isSql": false
+					}
+				},
+				"source": [
+					"# Load and join data\n",
+					"df_StoreDemographics = spark.read\\\n",
+					"                        .format(\"cosmos.olap\")\\\n",
+					"                        .option(\"spark.synapse.linkedService\", \"RetailSalesDemoDB\")\\\n",
+					"                        .option(\"spark.cosmos.container\", \"StoreDemoGraphics\")\\\n",
+					"                        .load()\\\n",
+					"                        .toPandas()\n",
+					"\n",
+					"df_RetailSales = spark.read\\\n",
+					"                        .format(\"cosmos.olap\")\\\n",
+					"                        .option(\"spark.synapse.linkedService\", \"RetailSalesDemoDB\")\\\n",
+					"                        .option(\"spark.cosmos.container\", \"RetailSales\")\\\n",
+					"                        .load()\\\n",
+					"                        .toPandas()\n",
+					"\n",
+					"df_Products = spark.read\\\n",
+					"                    .format(\"cosmos.olap\")\\\n",
+					"                    .option(\"spark.synapse.linkedService\", \"RetailSalesDemoDB\")\\\n",
+					"                    .option(\"spark.cosmos.container\", \"Products\")\\\n",
+					"                    .load()\\\n",
+					"                    .toPandas()\n",
+					"\n",
+					"display(df_Products.head(10))\n",
+					"\n",
+					"df = df_RetailSales.merge(df_Products, on=['productCode'], how='left').merge(df_StoreDemographics, on=['storeId'], how = 'left')\n",
+					"df.head(5)"
+				],
+				"attachments": null,
+				"execution_count": 5
+			},
+			{
+				"cell_type": "code",
+				"source": [
+					"# Define some featurizers: dictionary encoder and date featurizer\n",
+					"\n",
+					"def dictionary_encode(df, column, dictionary):\n",
+					"\n",
+					"    def add_into_dict(value, dictionary):\n",
+					"        count = 0\n",
+					"        if len(dictionary) > 0:\n",
+					"            count = max(dictionary.values())\n",
+					"        count += 1\n",
+					"        dictionary[value] = count\n",
+					"        return count\n",
+					"\n",
+					"    df[column] = pd.DataFrame(df[column].values)[0].apply(lambda x: dictionary[x] if x in dictionary else add_into_dict(x, dictionary))\n",
+					"\n",
+					"def date_featurize(df,column):\n",
+					"    df[column] = pd.DataFrame(df[column].values)[0].apply(lambda x: (int(datetime.strptime(x, '%m/%d/%Y').strftime('%m%d%Y'))))"
+				],
+				"attachments": null,
+				"execution_count": 7
+			},
+			{
+				"cell_type": "code",
+				"metadata": {
+					"diagram": {
+						"activateDiagramType": 1,
+						"chartConfig": {
+							"category": "bar",
+							"keys": [
+								"productCode"
+							],
+							"values": [
+								"storeId"
+							],
+							"yLabel": "storeId",
+							"xLabel": "productCode",
+							"aggregation": "SUM",
+							"aggByBackend": false
+						},
+						"aggData": "{\"storeId\":{\"1\":10}}",
+						"isSummary": false,
+						"previewData": {
+							"filter": null
+						},
+						"isSql": false
+					}
+				},
+				"source": [
+					"# Featurize the data\n",
+					"dictionary = {}\n",
+					"\n",
+					"dictionary_encode(df,'productCode', dictionary)\n",
+					"date_featurize(df,'weekStarting')\n",
+					"df.head(5)"
+				],
+				"attachments": null,
+				"execution_count": 10
+			},
+			{
+				"cell_type": "code",
+				"metadata": {
+					"diagram": {
+						"activateDiagramType": 1,
+						"chartConfig": {
+							"category": "bar",
+							"keys": [
+								"productCode"
+							],
+							"values": [
+								"storeId"
+							],
+							"yLabel": "storeId",
+							"xLabel": "productCode",
+							"aggregation": "SUM",
+							"aggByBackend": false
+						},
+						"aggData": "{\"storeId\":{\"1\":10}}",
+						"isSummary": false,
+						"previewData": {
+							"filter": null
+						},
+						"isSql": false
+					}
+				},
+				"source": [
+					"# Drop unecessary columns\n",
+					"#df = df.drop(columns=['logQuantity', 'id_x', 'id_y', 'id'])\n",
+					"#df.head(5)\n",
+					"\n",
+					"df = df.drop(columns=['logQuantity', '_rid_x', '_rid_y', 'id','_rid','_ts','_ts_x','_ts_y','_etag','_etag_x','_etag_y','id_x','id_y'])\n",
+					"df.head(5)"
+				],
+				"attachments": null,
+				"execution_count": 11
+			},
+			{
+				"cell_type": "code",
+				"source": [
+					"train_df, test_df = train_test_split(df, test_size=0.2)\n",
+					"\n",
+					"train_features = pd.DataFrame(train_df.drop(['quantity'], axis = 1))\n",
+					"train_labels = pd.DataFrame(train_df.iloc[:,train_df.columns.tolist().index('quantity')])\n",
+					"\n",
+					"test_features = pd.DataFrame(test_df.drop(['quantity'], axis = 1))\n",
+					"test_labels = pd.DataFrame(test_df.iloc[:,test_df.columns.tolist().index('quantity')])\n",
+					"\n",
+					"# Convert test_features from df to numpy array\n",
+					"test_features = np.array(test_features).astype(np.float32)"
+				],
+				"execution_count": 12
+			},
+			{
+				"cell_type": "code",
+				"source": [
+					"# Define the pipeline\n",
+					"scaler_transformer = Pipeline(steps=[('scaler', StandardScaler())])\n",
+					"preprocessor = ColumnTransformer(transformers=[('scaling', scaler_transformer, list(train_features.columns))])\n",
+					"model = RandomForestRegressor(n_estimators=10, max_depth=9)\n",
+					"pipeline = Pipeline(steps=[('preprocessor', preprocessor), ('model', model)])"
+				],
+				"attachments": null,
+				"execution_count": 13
+			},
+			{
+				"cell_type": "code",
+				"source": [
+					"# Train a Random Forest Regressor model on the data\n",
+					"\n",
+					"pipeline.fit(train_features, train_labels)"
+				],
+				"attachments": null,
+				"execution_count": 14
+			},
+			{
+				"cell_type": "code",
+				"source": [
+					"# Everything is 'float32'\n",
+					"\n",
+					"def input_types(features):\n",
+					"    inputs = []\n",
+					"    for columnName, columnType in zip(features.columns, features.dtypes):\n",
+					"        inputs.append((str(columnName), FloatTensorType([None, 1])))\n",
+					"    return inputs"
+				],
+				"execution_count": 15
+			},
+			{
+				"cell_type": "code",
+				"source": [
+					"initial_types = input_types(train_features)\n",
+					"initial_types"
+				],
+				"attachments": null,
+				"execution_count": 16
+			},
+			{
+				"cell_type": "markdown",
+				"source": [
+					"## Convert model to ONNX\n",
+					""
+				]
+			},
+			{
+				"cell_type": "code",
+				"source": [
+					"# Convert the trained model into ONNX using skl2onnx\n",
+					"\n",
+					"onnx_ml_model = convert_sklearn(pipeline, initial_types=initial_types, final_types=[('quantity', FloatTensorType([None, 1]))])"
+				],
+				"attachments": null,
+				"execution_count": 17
+			},
+			{
+				"cell_type": "code",
+				"source": [
+					"# Run prediction using the onnxml model\n",
+					"sess = ort.InferenceSession(onnx_ml_model.SerializeToString())\n",
+					"inputs = sess.get_inputs()\n",
+					"outputs = sess.get_outputs()\n",
+					"\n",
+					"test_inputs = { inputs[i].name: test_features[:,i].reshape(-1,1) for i in range(len(inputs)) }\n",
+					"target_name = outputs[0].name;"
+				],
+				"attachments": null,
+				"execution_count": 18
+			},
+			{
+				"cell_type": "code",
+				"metadata": {
+					"tags": []
+				},
+				"source": [
+					"%%timeit\n",
+					"sess.run([target_name], test_inputs)"
+				],
+				"attachments": null,
+				"execution_count": 19
+			},
+			{
+				"cell_type": "markdown",
+				"source": [
+					"## Connect to Azure ML Workspace\n",
+					""
+				]
+			},
+			{
+				"cell_type": "code",
+				"source": [
+					"from azureml.core import Workspace\n",
+					"\n",
+					"subscription_id = \"58f8824d-32b0-4825-9825-02fa6a801546\" #you should be owner or contributor\n",
+					"resource_group = \"prlangadrg\" #you should be owner or contributor\n",
+					"workspace_name = \"amlwsdemos\" #your workspace name\n",
+					"\n",
+					"ws = Workspace(subscription_id = subscription_id, resource_group = resource_group, workspace_name = workspace_name)\n",
+					"\n",
+					"print('Workspace name: ' + ws.name, \n",
+					"      'Azure region: ' + ws.location, \n",
+					"      'Subscription id: ' + ws.subscription_id, \n",
+					"      'Resource group: ' + ws.resource_group, sep = '\\n')"
+				],
+				"attachments": null,
+				"execution_count": 20
+			},
+			{
+				"cell_type": "markdown",
+				"source": [
+					"## Register model with MLFlow in Azure ML model registry\n",
+					""
+				]
+			},
+			{
+				"cell_type": "code",
+				"source": [
+					"import mlflow\n",
+					"import mlflow.onnx\n",
+					"\n",
+					"from mlflow.models.signature import infer_signature\n",
+					"\n",
+					"experiment_name = 'synapse_retail_model_onnx'\n",
+					"artifact_path = 'synapse_retail_model_onnx_artifact'\n",
+					"\n",
+					"mlflow.set_tracking_uri(ws.get_mlflow_tracking_uri())\n",
+					"mlflow.set_experiment(experiment_name)\n",
+					"\n",
+					"with mlflow.start_run() as run:\n",
+					"    # Infer signature\n",
+					"    input_sample = train_features.head(1).astype(np.float32)\n",
+					"    output_sample = pd.DataFrame(columns=['quantity'], data=[1234.0]).astype(np.float32)\n",
+					"    signature = infer_signature(input_sample, output_sample)\n",
+					"\n",
+					"    # Save the model to the outputs directory for capture\n",
+					"    mlflow.onnx.log_model(onnx_ml_model, artifact_path, signature=signature)\n",
+					"\n",
+					"    # Register the model to AML model registry\n",
+					"    mlflow.register_model('runs:/' + run.info.run_id + '/' + artifact_path, 'synapse_retail_model_onnx')"
+				],
+				"execution_count": 21
+			}
+		]
+	}
+}

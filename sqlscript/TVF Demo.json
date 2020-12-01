@@ -1,0 +1,19 @@
+{
+	"name": "TVF Demo",
+	"properties": {
+		"folder": {
+			"name": "Demo scripts"
+		},
+		"content": {
+			"query": "CREATE FUNCTION dbo.PopularItemByCity(@CityName VARCHAR(40))\nRETURNS TABLE\nAS\nRETURN\n(\n    SELECT TOP 10\n        City,\n        Region,\n        ProductDescription,\n        TotalUnitsSold,\n        TotalProfit\n    FROM (\n         SELECT \n            c.City AS City,\n            c.Region AS Region,\n            s.Description AS ProductDescription,\n            SUM(s.Quantity) AS TotalUnitsSold,\n            SUM(s.Profit) AS TotalProfit\n        FROM wwi.FactSale s JOIN wwi.DimCity c ON (s.CityKey = c.CityKey)\n        WHERE \n            c.City like '%' + @CityName + '%'\n        GROUP BY \n            c.City,\n            c.Region,\n            s.Description\n        ) a\n    ORDER BY\n        TotalProfit DESC\n);\nGO\n\nSELECT * FROM PopularItemByCity('Coin')",
+			"metadata": {
+				"language": "sql"
+			},
+			"currentConnection": {
+				"name": "WWI_Pool",
+				"type": "SqlPool"
+			}
+		},
+		"type": "SqlQuery"
+	}
+}

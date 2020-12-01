@@ -1,0 +1,104 @@
+{
+	"name": "zzzmsutils_python",
+	"properties": {
+		"folder": {
+			"name": "Test notebooks"
+		},
+		"nbformat": 4,
+		"nbformat_minor": 2,
+		"bigDataPool": {
+			"referenceName": "analyticspool",
+			"type": "BigDataPoolReference"
+		},
+		"sessionProperties": {
+			"driverMemory": "28g",
+			"driverCores": 4,
+			"executorMemory": "28g",
+			"executorCores": 4,
+			"numExecutors": 2
+		},
+		"metadata": {
+			"kernelspec": {
+				"name": "synapse_pyspark",
+				"display_name": "Synapse PySpark"
+			},
+			"language_info": {
+				"name": "python"
+			},
+			"a365ComputeOptions": {
+				"id": "/subscriptions/7e416de3-c506-4776-8270-83fd73c6cc37/resourceGroups/demosynapserg/providers/Microsoft.Synapse/workspaces/wsazuresynapseanalytics/bigDataPools/analyticspool",
+				"name": "analyticspool",
+				"type": "Spark",
+				"endpoint": "https://wsazuresynapseanalytics.dev.azuresynapse.net/livyApi/versions/2019-11-01-preview/sparkPools/analyticspool",
+				"auth": {
+					"type": "AAD",
+					"authResource": "https://dev.azuresynapse.net"
+				},
+				"sparkVersion": "2.4",
+				"nodeCount": 3,
+				"cores": 8,
+				"memory": 56
+			}
+		},
+		"cells": [
+			{
+				"cell_type": "code",
+				"metadata": {
+					"cellLanguage": "python",
+					"tags": [
+						"parameters"
+					]
+				},
+				"source": [
+					"dirPath = 'RetailData'"
+				],
+				"execution_count": 17
+			},
+			{
+				"cell_type": "code",
+				"source": [
+					"msutils.fs.help()"
+				],
+				"attachments": null,
+				"execution_count": 18
+			},
+			{
+				"cell_type": "markdown",
+				"source": [
+					"# List files"
+				],
+				"attachments": null
+			},
+			{
+				"cell_type": "code",
+				"source": [
+					"# list files under default ADLS Gen2 storage\n",
+					"msutils.fs.ls(\"/\")"
+				],
+				"attachments": null,
+				"execution_count": 21
+			},
+			{
+				"cell_type": "code",
+				"source": [
+					"files = msutils.fs.ls(\"/\" + dirPath)"
+				],
+				"attachments": null,
+				"execution_count": 22
+			},
+			{
+				"cell_type": "code",
+				"source": [
+					"for i in files:\n",
+					"    if i.isDir:  \n",
+					"        dirFiles = msutils.fs.ls(i.path)\n",
+					"        for j in dirFiles:\n",
+					"            print(i.path)\n",
+					"            print('     :' + j.path, j.size) "
+				],
+				"attachments": null,
+				"execution_count": 23
+			}
+		]
+	}
+}

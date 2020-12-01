@@ -1,0 +1,20 @@
+{
+	"name": "SQLPool_CustSalesAgg",
+	"properties": {
+		"linkedServiceName": {
+			"referenceName": "wsazuresynapseanalytics-WorkspaceDefaultSqlServer",
+			"type": "LinkedServiceReference",
+			"parameters": {
+				"DBName": "WWI_Pool"
+			}
+		},
+		"annotations": [],
+		"type": "AzureSqlDWTable",
+		"schema": [],
+		"typeProperties": {
+			"schema": "dbo",
+			"table": "CustSales"
+		}
+	},
+	"type": "Microsoft.Synapse/workspaces/datasets"
+}

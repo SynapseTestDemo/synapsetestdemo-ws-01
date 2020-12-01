@@ -1,0 +1,228 @@
+{
+	"name": "99 ADX_Synapse_Demo_01",
+	"properties": {
+		"folder": {
+			"name": "Demo notebooks"
+		},
+		"nbformat": 4,
+		"nbformat_minor": 2,
+		"sessionProperties": {
+			"driverMemory": "28g",
+			"driverCores": 4,
+			"executorMemory": "28g",
+			"executorCores": 4,
+			"numExecutors": 2,
+			"conf": {
+				"spark.dynamicAllocation.minExecutors": "2",
+				"spark.dynamicAllocation.maxExecutors": "2"
+			}
+		},
+		"metadata": {
+			"kernelspec": {
+				"name": "synapse_pyspark",
+				"display_name": "Synapse PySpark"
+			},
+			"language_info": {
+				"name": "python"
+			}
+		},
+		"cells": [
+			{
+				"cell_type": "markdown",
+				"metadata": {
+					"nteract": {
+						"transient": {
+							"deleting": false
+						}
+					}
+				},
+				"source": [
+					"# Prequisits\r\n",
+					"* Create Azure Data Explorer link service for demo cluster: https://igniteadxsource.eastus2.kusto.windows.net, database: Occupancy\r\n",
+					"* Update link service name in the below scripts \r\n",
+					"* Ensure your account and the your SPN has read permissions on the Occupancy and SynapseDemoDB\r\n",
+					"* Ensure your account and the your SPN has permissions on SynapseDemoDB \r\n",
+					"* Create ADLS Gen2 link service for abfss://thermostats@occupancysa.dfs.core.windows.net\r\n",
+					"* Ensure our account and workspace MSI account have read access to this storage accont"
+				],
+				"attachments": null
+			},
+			{
+				"cell_type": "markdown",
+				"metadata": {
+					"nteract": {
+						"transient": {
+							"deleting": false
+						}
+					}
+				},
+				"source": [
+					"# Query near-real-time data streaming into Azure Data Explorer"
+				],
+				"attachments": null
+			},
+			{
+				"cell_type": "code",
+				"metadata": {
+					"jupyter": {
+						"source_hidden": false,
+						"outputs_hidden": false
+					},
+					"nteract": {
+						"transient": {
+							"deleting": false
+						}
+					},
+					"microsoft": {
+						"language": "python"
+					},
+					"collapsed": true
+				},
+				"source": [
+					"%%pyspark\r\n",
+					"\r\n",
+					"# Read data from Azure Data Explorer table(s)\r\n",
+					"# Full Sample Code available at: https://github.com/Azure/azure-kusto-spark/blob/master/samples/src/main/python/SynapseSample.py\r\n",
+					"\r\n",
+					"kustoDf  = spark.read \\\r\n",
+					"    .format(\"com.microsoft.kusto.spark.synapse.datasource\") \\\r\n",
+					"    .option(\"spark.synapse.linkedService\", \"igniteadxsource_eastus2\") \\\r\n",
+					"    .option(\"kustoDatabase\", \"Occupancy\") \\\r\n",
+					"    .option(\"kustoQuery\", \"Thermostats | where EnqueuedTimeUTC > ago(10m) | take 50\") \\\r\n",
+					"    .load()\r\n",
+					"\r\n",
+					"display(kustoDf)"
+				],
+				"attachments": null,
+				"execution_count": 1
+			},
+			{
+				"cell_type": "markdown",
+				"metadata": {
+					"nteract": {
+						"transient": {
+							"deleting": false
+						}
+					}
+				},
+				"source": [
+					"# Access archived data that is contineously expored by Azure Data Explorer into the Data Lake"
+				],
+				"attachments": null
+			},
+			{
+				"cell_type": "code",
+				"metadata": {
+					"jupyter": {
+						"source_hidden": false,
+						"outputs_hidden": false
+					},
+					"nteract": {
+						"transient": {
+							"deleting": false
+						}
+					},
+					"collapsed": true
+				},
+				"source": [
+					"# Read the archive data that is continuously exported to Synapse Data Lake linked account\r\n",
+					"\r\n",
+					"basePath=\"abfss://thermostats@occupancysa.dfs.core.windows.net/\"\r\n",
+					"sparkDF = spark.read.option(\"basePath\", basePath).parquet(basePath + \"device_id=637086755032203451/event_date=2019-11-30\")"
+				],
+				"attachments": null,
+				"execution_count": 2
+			},
+			{
+				"cell_type": "markdown",
+				"metadata": {
+					"nteract": {
+						"transient": {
+							"deleting": false
+						}
+					}
+				},
+				"source": [
+					"# Process archived data from the Data Lake"
+				],
+				"attachments": null
+			},
+			{
+				"cell_type": "code",
+				"metadata": {
+					"jupyter": {
+						"source_hidden": false,
+						"outputs_hidden": false
+					},
+					"nteract": {
+						"transient": {
+							"deleting": false
+						}
+					},
+					"collapsed": true
+				},
+				"source": [
+					"# generate daily aggregrates for the last one year of data\r\n",
+					"from pyspark.sql.functions import col, window, avg\r\n",
+					"\r\n",
+					"df_summary = sparkDF.groupBy(window(sparkDF[\"EnqueuedTimeUTC\"], \"1 day\"), sparkDF[\"device_id\"]).agg(avg(\"Temp\").alias(\"daily_avg_temp\"),avg(\"BatteryLevel\").alias(\"daily_avg_battery_level\"), avg(\"Humidity\").alias(\"daily_avg_humidity\"))         "
+				],
+				"attachments": null,
+				"execution_count": 5
+			},
+			{
+				"cell_type": "markdown",
+				"metadata": {
+					"nteract": {
+						"transient": {
+							"deleting": false
+						}
+					}
+				},
+				"source": [
+					"# Ingest the processed data into Azure Data Explorer for further analysis"
+				],
+				"attachments": null
+			},
+			{
+				"cell_type": "code",
+				"metadata": {
+					"jupyter": {
+						"source_hidden": false,
+						"outputs_hidden": false
+					},
+					"nteract": {
+						"transient": {
+							"deleting": false
+						}
+					},
+					"microsoft": {
+						"language": "python"
+					},
+					"collapsed": true
+				},
+				"source": [
+					"%%pyspark\r\n",
+					"\r\n",
+					"# write the yearly aggregrated data to Azure Data Explorer\r\n",
+					"# update the kustoTable name to send data to a unique table\r\n",
+					"\r\n",
+					"import requests\r\n",
+					"\r\n",
+					"\r\n",
+					"df_summary.select(\"window.start\",\"device_id\", \"daily_avg_temp\", \"daily_avg_battery_level\", \"daily_avg_humidity\") \\\r\n",
+					"  .write \\\r\n",
+					"  .format(\"com.microsoft.kusto.spark.synapse.datasource\") \\\r\n",
+					"  .option(\"spark.synapse.linkedService\", \"igniteadxsource_eastus2\") \\\r\n",
+					"  .option(\"kustoDatabase\", \"SynapseDemoDB\") \\\r\n",
+					"  .option(\"kustoTable\", \"DailyAggregrates_10212020\") \\\r\n",
+					"  .option(\"tableCreateOptions\",\"CreateIfNotExist\") \\\r\n",
+					"  .mode(\"Append\") \\\r\n",
+					"  .save()"
+				],
+				"attachments": null,
+				"execution_count": 9
+			}
+		]
+	}
+}

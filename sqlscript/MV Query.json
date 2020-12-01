@@ -1,0 +1,19 @@
+{
+	"name": "MV Query",
+	"properties": {
+		"folder": {
+			"name": "Demo scripts"
+		},
+		"content": {
+			"query": "\nSELECT \n    l.City,\n    l.Region,\n    s.Description,\n    SUM(h.QuantityOnHand) AS TotalInStock,\n    SUM(s.Quantity) AS TotalItemsSold,\n    AVG(s.Profit) AS AvgProfitOnSale,\n    SUM(s.Profit) AS TotalProfit\nFROM wwi.FactSale s \nINNER JOIN wwi.FactStockHolding h\n    ON (s.StockItemKey = h.StockHoldingKey)\nINNER JOIN wwi.DimCity l \n    ON (s.CityKey = l.CityKey)\nWHERE \n   s.Profit > 100 AND s.Profit < 500 AND  h.QuantityOnHand > 0  \nGROUP BY\n    City,\n    Region,\n    Description\nORDER BY\n    SUM(Profit) DESC,\n    Region,\n    City\n\n\n\n\n",
+			"metadata": {
+				"language": "sql"
+			},
+			"currentConnection": {
+				"name": "WWI_Pool",
+				"type": "SqlCompute"
+			}
+		},
+		"type": "SqlQuery"
+	}
+}

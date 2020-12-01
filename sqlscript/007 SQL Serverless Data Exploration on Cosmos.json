@@ -1,0 +1,19 @@
+{
+	"name": "007 SQL Serverless Data Exploration on Cosmos",
+	"properties": {
+		"folder": {
+			"name": "MS Conf scripts"
+		},
+		"content": {
+			"query": "\n/*******************************************************************************************\nName: 007 SQL Serverless Data Exploration on Cosmos \nConnect To: SQL on-demand\nUse database: SQLServerlessDB\nDescription: Data Exploration using SQL on-demand on Synapse Link enabled CosmosDB container\n            1. Example with Schema inference\n            2. Example with Specifying Schema\n            3. Create View Example\n            4. Sample aggregation queries\n*********************************************************************************************/\n\n-- Schema inference\nSELECT *\nFROM OPENROWSET ('CosmosDB'\n  ,'account=cosmosdbsynapseaccount;database=RetailSalesDemoDB;key=2cAAmr4JVyCqSzL4qnWPnGrcK8ZyrCK6TBzo3Pblx2vLHxHvaf9RjZxcZg6c9rojmcaSyOVpp3aifPLxZwim4Q==;region='\n  ,RetailSales \n)  \nAS p\n\n-- Specify schema\nSELECT *\nFROM OPENROWSET ('CosmosDB'\n  ,'account=cosmosdbsynapseaccount;database=RetailSalesDemoDB;key=2cAAmr4JVyCqSzL4qnWPnGrcK8ZyrCK6TBzo3Pblx2vLHxHvaf9RjZxcZg6c9rojmcaSyOVpp3aifPLxZwim4Q==;region='\n  ,Products\n) WITH (\n        id varchar(256), \n        productCode varchar(256),\n        wholeSaleCost varchar(256),\n        basePrice varchar(256) \n)\nAS p\nGO\n\n-- Create view:\nIF (0 = (SELECT count(*) FROM sys.schemas WHERE name = 'cosmosdb'))\nBEGIN\n    EXEC sp_executesql @sql = N'CREATE SCHEMA cosmosdb';\nEND\n\nGO\n\nCREATE OR ALTER VIEW cosmosdb.Product AS\nSELECT *\nFROM OPENROWSET ('CosmosDB'\n  ,'Account=cosmosdbsynapseaccount;Database=RetailSalesDemoDB;key=2cAAmr4JVyCqSzL4qnWPnGrcK8ZyrCK6TBzo3Pblx2vLHxHvaf9RjZxcZg6c9rojmcaSyOVpp3aifPLxZwim4Q==;region='\n  ,Products\n) WITH (\n        id varchar(256), \n        productCode varchar(256),\n        basePrice varchar(256),\n        wholeSaleCost varchar(256)\n) AS p\nGO\n\n-- Simple query\nSELECT * FROM cosmosdb.Product\nGO\n\n-- Report 1\nSELECT product = ISNULL(p.productCode, 'Total:'), sales = SUM(cast(quantity as FLOAT)*cast(price as FLOAT))\n FROM adls.RetailSales1 rs\n    JOIN cosmosdb.Product p ON rs.productCode = p.productCode\n  WHERE rs.StoreID = 80\n GROUP  BY p.productCode WITH ROLLUP\n ORDER BY SUM(cast(quantity as FLOAT)*cast(price as FLOAT)) ASC;\n \n-- Report 2\nSELECT product = ISNULL(p.productCode, 'Total:'), sales = SUM(quantity*price)\n FROM adls.RetailSales rs\n    JOIN cosmosdb.Product p ON rs.productCode = p.productCode\n    JOIN adls.StoreDemographics sd ON sd.StoreID = rs.StoreID\n  WHERE sd.highIncome150Ratio > .9\n GROUP  BY p.productCode WITH ROLLUP\n ORDER BY SUM(quantity*price) ASC;",
+			"metadata": {
+				"language": "sql"
+			},
+			"currentConnection": {
+				"name": "SQLServerlessDB",
+				"type": "SqlOnDemand"
+			}
+		},
+		"type": "SqlQuery"
+	}
+}

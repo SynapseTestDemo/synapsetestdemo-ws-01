@@ -1,0 +1,42 @@
+{
+	"name": "ProductCSV",
+	"properties": {
+		"linkedServiceName": {
+			"referenceName": "wsazuresynapseanalytics-WorkspaceDefaultStorage",
+			"type": "LinkedServiceReference"
+		},
+		"annotations": [],
+		"type": "DelimitedText",
+		"typeProperties": {
+			"location": {
+				"type": "AzureBlobFSLocation",
+				"fileName": "Products.csv",
+				"folderPath": "RetailData",
+				"fileSystem": "default"
+			},
+			"columnDelimiter": ",",
+			"escapeChar": "\\",
+			"firstRowAsHeader": true,
+			"quoteChar": "\""
+		},
+		"schema": [
+			{
+				"name": "id",
+				"type": "String"
+			},
+			{
+				"name": "productCode",
+				"type": "String"
+			},
+			{
+				"name": "basePrice",
+				"type": "String"
+			},
+			{
+				"name": "wholeSaleCost",
+				"type": "String"
+			}
+		]
+	},
+	"type": "Microsoft.Synapse/workspaces/datasets"
+}

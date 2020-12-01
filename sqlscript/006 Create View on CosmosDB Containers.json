@@ -1,0 +1,19 @@
+{
+	"name": "006 Create View on CosmosDB Containers",
+	"properties": {
+		"folder": {
+			"name": "MS Conf scripts"
+		},
+		"content": {
+			"query": "/*******************************************************************************************\nName: 006 Create View on CosmosDB Containers \nConnect To: SQL on-demand\nUse database: SQLServerlessDB\nDescription: Use SQL to read data from CosmosDB Analytical Store containers,\n            build view on top of it, auto schema inferencing \n            and show ease of exploration with SQL on-demand\n\n*********************************************************************************************/\n\nCREATE VIEW vwsurfaceretailsales AS\nSELECT \n products.[productCode]\n,products.[wholeSaleCost]\n,products.[id] as [productId]\n,products.[basePrice]\n,sales.[logQuantity]\n,sales.[quantity]\n,sales.[price]\n,sales.[advertising]\n,sales.[id] as [salesId]\n,sales.[weekStarting]\n,store.[income]\n,store.[minoritiesRatio]\n,store.[largeHH]\n,store.[highIncome150Ratio]\n,store.[more1FullTimeEmployeeRatio]\n,store.[ratioAge60]\n,store.[salesNearestWarehousesRatio]\n,store.[storeId]\n,store.[salesNearest5StoresRatio]\n,store.[collegeRatio]\n,store.[avgDistanceNearest5Supermarkets]\n,store.[distanceNearestWarehouse]\nFROM OPENROWSET(\n            'CosmosDB'\n            ,'account=cosmosdbsynapseaccount;database=RetailSalesDemoDB;key=2cAAmr4JVyCqSzL4qnWPnGrcK8ZyrCK6TBzo3Pblx2vLHxHvaf9RjZxcZg6c9rojmcaSyOVpp3aifPLxZwim4Q==;region='\n            ,[RetailSales]\n    ) As sales\nJOIN \n(\n    SELECT *\n    FROM OPENROWSET (\n        'CosmosDB',\n        'Account=cosmosdbsynapseaccount;Database=RetailSalesDemoDB;key=2cAAmr4JVyCqSzL4qnWPnGrcK8ZyrCK6TBzo3Pblx2vLHxHvaf9RjZxcZg6c9rojmcaSyOVpp3aifPLxZwim4Q==;region='\n        ,[Products]\n    ) AS p\n) as products\nON sales.productCode=products.productCode\nJOIN\n(\n    SELECT \n    *\n    FROM OPENROWSET(\n        'CosmosDB'\n        ,'account=cosmosdbsynapseaccount;database=RetailSalesDemoDB;key=2cAAmr4JVyCqSzL4qnWPnGrcK8ZyrCK6TBzo3Pblx2vLHxHvaf9RjZxcZg6c9rojmcaSyOVpp3aifPLxZwim4Q==;region='\n        ,[StoreDemoGraphics]    \n    ) as s        \n) as store\nON sales.storeId = Store.storeId\n",
+			"metadata": {
+				"language": "sql"
+			},
+			"currentConnection": {
+				"name": "SQLServerlessDB",
+				"type": "SqlOnDemand"
+			}
+		},
+		"type": "SqlQuery"
+	}
+}

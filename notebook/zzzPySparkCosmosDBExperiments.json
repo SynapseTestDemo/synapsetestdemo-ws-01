@@ -1,0 +1,327 @@
+{
+	"name": "zzzPySparkCosmosDBExperiments",
+	"properties": {
+		"folder": {
+			"name": "Test notebooks"
+		},
+		"nbformat": 4,
+		"nbformat_minor": 2,
+		"bigDataPool": {
+			"referenceName": "analyticspool",
+			"type": "BigDataPoolReference"
+		},
+		"sessionProperties": {
+			"driverMemory": "28g",
+			"driverCores": 4,
+			"executorMemory": "28g",
+			"executorCores": 4,
+			"numExecutors": 2
+		},
+		"metadata": {
+			"kernelspec": {
+				"name": "synapse_pyspark",
+				"display_name": "Synapse PySpark"
+			},
+			"language_info": {
+				"name": "python"
+			},
+			"a365ComputeOptions": {
+				"id": "/subscriptions/7e416de3-c506-4776-8270-83fd73c6cc37/resourceGroups/demosynapserg/providers/Microsoft.Synapse/workspaces/wsazuresynapseanalytics/bigDataPools/analyticspool",
+				"name": "analyticspool",
+				"type": "Spark",
+				"endpoint": "https://wsazuresynapseanalytics.dev.azuresynapse.net/livyApi/versions/2019-11-01-preview/sparkPools/analyticspool",
+				"auth": {
+					"type": "AAD",
+					"authResource": "https://dev.azuresynapse.net"
+				},
+				"sparkVersion": "2.4",
+				"nodeCount": 3,
+				"cores": 8,
+				"memory": 56
+			}
+		},
+		"cells": [
+			{
+				"cell_type": "markdown",
+				"source": [
+					"## Script\n",
+					"- Load one table in from CosmosDB\n",
+					"    - Do EDA, summary, stats, chart\n",
+					"- Load in other tables\n",
+					"- Join\n",
+					"    - Broadcast join?\n",
+					"- Magics\n",
+					"    - %%timeit\n",
+					"    - %%lsmagic\n",
+					"- parameters in ADF\n",
+					"- mssparkutils\n",
+					"- Write data out to table\n",
+					"- On Demand\n",
+					"- Serve in PBI\n",
+					"\n",
+					""
+				],
+				"attachments": null
+			},
+			{
+				"cell_type": "code",
+				"metadata": {
+					"diagram": {
+						"activateDiagramType": 1,
+						"chartConfig": {
+							"category": "bar",
+							"keys": [
+								"_rid"
+							],
+							"values": [
+								"_ts"
+							],
+							"yLabel": "_ts",
+							"xLabel": "_rid",
+							"aggregation": "SUM",
+							"aggByBackend": false
+						},
+						"aggData": "\"{\\\"_ts\\\":{\\\"sY0TAOBJNuEBAAAAAAAAAA==\\\":1598476485,\\\"sY0TAOBJNuECAAAAAAAAAA==\\\":1598476485,\\\"sY0TAOBJNuEDAAAAAAAAAA==\\\":1598476485,\\\"sY0TAOBJNuEEAAAAAAAAAA==\\\":1598476485,\\\"sY0TAOBJNuEFAAAAAAAAAA==\\\":1598476485,\\\"sY0TAOBJNuEGAAAAAAAAAA==\\\":1598476485,\\\"sY0TAOBJNuEHAAAAAAAAAA==\\\":1598476485,\\\"sY0TAOBJNuEIAAAAAAAAAA==\\\":1598476485,\\\"sY0TAOBJNuEJAAAAAAAAAA==\\\":1598476485,\\\"sY0TAOBJNuEKAAAAAAAAAA==\\\":1598476485}}\"",
+						"isSummary": false,
+						"previewData": {
+							"filter": null
+						},
+						"isSql": false
+					}
+				},
+				"source": [
+					"# Read from Cosmos DB analytical store into a Spark DataFrame and display 10 rows from the DataFrame\n",
+					"# To select a preferred list of regions in a multi-region Cosmos DB account, add .option(\"spark.cosmos.preferredRegions\", \"<Region1>,<Region2>\")\n",
+					"\n",
+					"df_Products = spark.read\\\n",
+					"    .format(\"cosmos.olap\")\\\n",
+					"    .option(\"spark.synapse.linkedService\", \"RetailSalesDemoDB\")\\\n",
+					"    .option(\"spark.cosmos.container\", \"Products\")\\\n",
+					"    .load()\n",
+					"\n",
+					"display(df_Products.limit(10))\n",
+					"\n",
+					"df_RetailSales = spark.read\\\n",
+					"    .format(\"cosmos.olap\")\\\n",
+					"    .option(\"spark.synapse.linkedService\", \"RetailSalesDemoDB\")\\\n",
+					"    .option(\"spark.cosmos.container\", \"RetailSales\")\\\n",
+					"    .load()\n",
+					"\n",
+					"display(df_RetailSales.limit(10))"
+				],
+				"attachments": null,
+				"execution_count": 1
+			},
+			{
+				"cell_type": "code",
+				"metadata": {
+					"diagram": {
+						"activateDiagramType": 1,
+						"chartConfig": {
+							"category": "bar",
+							"keys": [
+								"minoritiesRatio"
+							],
+							"values": [
+								"income"
+							],
+							"yLabel": "income",
+							"xLabel": "minoritiesRatio",
+							"aggregation": "SUM",
+							"aggByBackend": false
+						},
+						"aggData": "\"{\\\"income\\\":{\\\"0.032618824\\\":10.787151,\\\"0.034178745\\\":11.043929,\\\"0.05608608\\\":10.959175,\\\"0.060687453\\\":11.233198,\\\"0.0700342\\\":10.605818,\\\"0.07350789\\\":10.983121,\\\"0.07465643\\\":10.793537,\\\"0.0994917\\\":10.756029,\\\"0.1877609\\\":10.585245,\\\"0.22099106\\\":10.188366}}\"",
+						"isSummary": false,
+						"previewData": {
+							"filter": null
+						},
+						"isSql": false
+					}
+				},
+				"source": [
+					"df_StoreDemographics = spark.read.load('abfss://default@azuresynapsesa.dfs.core.windows.net/RetailData/Transformed_StoreDemographicsData.parquet', format='parquet')\n",
+					"display(df_StoreDemographics.limit(10))"
+				],
+				"attachments": null,
+				"execution_count": 2
+			},
+			{
+				"cell_type": "code",
+				"metadata": {
+					"diagram": {
+						"activateDiagramType": 1,
+						"chartConfig": {
+							"category": "bar",
+							"keys": [
+								"storeId"
+							],
+							"values": [
+								"_ts"
+							],
+							"yLabel": "_ts",
+							"xLabel": "storeId",
+							"aggregation": "SUM",
+							"aggByBackend": false
+						},
+						"aggData": "\"{\\\"_ts\\\":{\\\"2\\\":17583241434,\\\"5\\\":23977147410,\\\"8\\\":14386288446,\\\"9\\\":14386288446,\\\"12\\\":15984764940,\\\"14\\\":20780194422,\\\"18\\\":20780194422,\\\"21\\\":22378670916,\\\"28\\\":14386288446,\\\"32\\\":22378670916,\\\"33\\\":12787811952,\\\"40\\\":17583241434,\\\"44\\\":28772576892,\\\"45\\\":7992382470,\\\"47\\\":23977147410,\\\"48\\\":9590858964,\\\"49\\\":20780194422,\\\"50\\\":12787811952,\\\"51\\\":27174100398,\\\"52\\\":23977147410,\\\"53\\\":22378670916,\\\"54\\\":19181717928,\\\"56\\\":23977147410,\\\"59\\\":23977147410,\\\"62\\\":22378670916,\\\"64\\\":15984764940,\\\"67\\\":20780194422,\\\"68\\\":20780194422,\\\"70\\\":19181717928,\\\"71\\\":17583241434,\\\"72\\\":15984764940,\\\"73\\\":27174100398,\\\"74\\\":22378670916,\\\"75\\\":19181717928,\\\"76\\\":27174100398,\\\"77\\\":19181717928,\\\"78\\\":12787811952,\\\"80\\\":11189335458,\\\"81\\\":25575623904,\\\"83\\\":17583241434,\\\"84\\\":19181717928,\\\"86\\\":15984764940,\\\"88\\\":6393905976,\\\"89\\\":27174100398,\\\"90\\\":22378670916,\\\"91\\\":20780194422,\\\"92\\\":25575623904,\\\"93\\\":15984764940,\\\"94\\\":12787811952,\\\"95\\\":23977147410,\\\"97\\\":17583241434,\\\"98\\\":17583241434,\\\"100\\\":36764959362,\\\"101\\\":20780194422,\\\"102\\\":17583241434,\\\"103\\\":28772576892,\\\"104\\\":15984764940,\\\"105\\\":12787811952,\\\"106\\\":20780194422,\\\"107\\\":19181717928,\\\"109\\\":25575623904,\\\"110\\\":12787811952,\\\"111\\\":17583241434,\\\"112\\\":22378670916,\\\"113\\\":20780194422,\\\"114\\\":15984764940,\\\"115\\\":22378670916,\\\"116\\\":22378670916,\\\"117\\\":19181717928,\\\"118\\\":23977147410,\\\"119\\\":19181717928,\\\"121\\\":19181717928,\\\"122\\\":17583241434,\\\"123\\\":36764959362,\\\"124\\\":9590858964,\\\"126\\\":23977147410,\\\"128\\\":12787811952,\\\"129\\\":14386288446,\\\"130\\\":15984764940,\\\"131\\\":23977147410,\\\"132\\\":11189335458,\\\"134\\\":11189335458,\\\"137\\\":6393905976}}\"",
+						"isSummary": false,
+						"previewData": {
+							"filter": null
+						},
+						"isSql": false
+					}
+				},
+				"source": [
+					"df = df_RetailSales.join(df_Products, on=['productCOde'], how='left').join(df_StoreDemographics, on=['storeId'], how = 'left')\n",
+					"display(df)"
+				],
+				"attachments": null,
+				"execution_count": 3
+			},
+			{
+				"cell_type": "code",
+				"source": [
+					"df = df.drop(\"_rid\",\"_ts\",\"_etag\",\"id\")"
+				],
+				"attachments": null,
+				"execution_count": 4
+			},
+			{
+				"cell_type": "code",
+				"source": [
+					"df.printSchema()"
+				],
+				"attachments": null,
+				"execution_count": 5
+			},
+			{
+				"cell_type": "code",
+				"source": [
+					"df.write.mode(\"overwrite\").saveAsTable(\"TestCOSMOSDB\")"
+				],
+				"attachments": null,
+				"execution_count": 6
+			},
+			{
+				"cell_type": "code",
+				"metadata": {
+					"microsoft": {
+						"language": "sparksql"
+					},
+					"diagram": {
+						"activateDiagramType": 1,
+						"chartConfig": {
+							"category": "bar",
+							"keys": [],
+							"values": [
+								"count(1)"
+							],
+							"yLabel": "count(1)",
+							"xLabel": "",
+							"aggregation": "SUM",
+							"aggByBackend": false
+						},
+						"aggData": "\"{\\\"count(1)\\\":{\\\"\\\":28947}}\"",
+						"isSummary": false,
+						"previewData": {
+							"filter": null
+						},
+						"isSql": true
+					}
+				},
+				"source": [
+					"%%sql\n",
+					"SELECT \n",
+					"    COUNT(*)\n",
+					"FROM\n",
+					"    TestCOSMOSDB"
+				],
+				"attachments": null,
+				"execution_count": 9
+			},
+			{
+				"cell_type": "code",
+				"source": [
+					"df_StoreDemographics = spark.read.load('abfss://default@azuresynapsesa.dfs.core.windows.net/RetailData/Transformed_StoreDemographicsData.parquet', format='parquet')"
+				],
+				"attachments": null,
+				"execution_count": 15
+			},
+			{
+				"cell_type": "code",
+				"metadata": {
+					"jupyter": {
+						"source_hidden": false,
+						"outputs_hidden": false
+					},
+					"nteract": {
+						"transient": {
+							"deleting": false
+						}
+					},
+					"collapsed": true
+				},
+				"source": [
+					"from pyspark.sql import SparkSession\r\n",
+					"from pyspark.sql.types import *\r\n",
+					"\r\n",
+					"# Primary storage info\r\n",
+					"account_name = 'azuresynapsesa' # fill in your primary account name\r\n",
+					"container_name = 'default' # fill in your container name\r\n",
+					"relative_path = 'RetailData' # fill in your relative folder path\r\n",
+					"\r\n",
+					"adls_path = 'abfss://%s@%s.dfs.core.windows.net/%s' % (container_name, account_name, relative_path)\r\n",
+					"print('Primary storage account path: ' + adls_path)"
+				],
+				"attachments": null,
+				"execution_count": 16
+			},
+			{
+				"cell_type": "code",
+				"metadata": {
+					"jupyter": {
+						"source_hidden": false,
+						"outputs_hidden": false
+					},
+					"nteract": {
+						"transient": {
+							"deleting": false
+						}
+					},
+					"collapsed": true
+				},
+				"source": [
+					"parquet_path = adls_path + 'StoreDemographics.parquet'\r\n",
+					"json_path = adls_path + 'StoreDemographics.json'\r\n",
+					"csv_path = adls_path + 'StoreDemographics.csv'\r\n",
+					"df_StoreDemographics.write.parquet(parquet_path, mode = 'overwrite')\r\n",
+					"df_StoreDemographics.write.json(json_path, mode = 'overwrite')\r\n",
+					"df_StoreDemographics.write.csv(csv_path, mode = 'overwrite', header = 'true')\r\n",
+					"df_StoreDemographics.write.format(\"delta\").save(adls_path)"
+				],
+				"attachments": null,
+				"execution_count": 17
+			},
+			{
+				"cell_type": "code",
+				"metadata": {
+					"jupyter": {
+						"source_hidden": false,
+						"outputs_hidden": false
+					},
+					"nteract": {
+						"transient": {
+							"deleting": false
+						}
+					},
+					"collapsed": true
+				},
+				"source": [
+					"display(df_StoreDemographics)"
+				],
+				"attachments": null,
+				"execution_count": 14
+			}
+		]
+	}
+}

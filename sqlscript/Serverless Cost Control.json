@@ -1,0 +1,19 @@
+{
+	"name": "Serverless Cost Control",
+	"properties": {
+		"folder": {
+			"name": "Demo scripts"
+		},
+		"content": {
+			"query": "-- Get the current state of data processed in MB:\nSELECT * FROM sys.dm_external_data_processed\nGO\n\n----------------------\n---- Cost Control ----\n----------------------\n\n-- Check the current state of data processed limits:\nSELECT * FROM sys.configurations\nWHERE name like 'Data processed %';\n\n-- Set new limits for desired period:\nsp_set_data_processed_limit\n\t@type = N'daily',\n\t@limit_tb = 1000\n\nsp_set_data_processed_limit\n\t@type= N'weekly',\n\t@limit_tb = 2\n\nsp_set_data_processed_limit\n\t@type= N'monthly',\n\t@limit_tb = 3334",
+			"metadata": {
+				"language": "sql"
+			},
+			"currentConnection": {
+				"name": "master",
+				"type": "SqlOnDemand"
+			}
+		},
+		"type": "SqlQuery"
+	}
+}

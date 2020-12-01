@@ -1,0 +1,379 @@
+{
+	"name": "zzzDemoGlueVideo",
+	"properties": {
+		"folder": {
+			"name": "Test notebooks"
+		},
+		"nbformat": 4,
+		"nbformat_minor": 2,
+		"bigDataPool": {
+			"referenceName": "analyticspool",
+			"type": "BigDataPoolReference"
+		},
+		"sessionProperties": {
+			"driverMemory": "28g",
+			"driverCores": 4,
+			"executorMemory": "28g",
+			"executorCores": 4,
+			"numExecutors": 2
+		},
+		"metadata": {
+			"kernelspec": {
+				"name": "synapse_pyspark",
+				"display_name": "Synapse PySpark"
+			},
+			"language_info": {
+				"name": "python"
+			},
+			"a365ComputeOptions": {
+				"id": "/subscriptions/7e416de3-c506-4776-8270-83fd73c6cc37/resourceGroups/demosynapserg/providers/Microsoft.Synapse/workspaces/wsazuresynapseanalytics/bigDataPools/analyticspool",
+				"name": "analyticspool",
+				"type": "Spark",
+				"endpoint": "https://wsazuresynapseanalytics.dev.azuresynapse.net/livyApi/versions/2019-11-01-preview/sparkPools/analyticspool",
+				"auth": {
+					"type": "AAD",
+					"authResource": "https://dev.azuresynapse.net"
+				},
+				"sparkVersion": "2.4",
+				"nodeCount": 3,
+				"cores": 8,
+				"memory": 56
+			}
+		},
+		"cells": [
+			{
+				"cell_type": "markdown",
+				"source": [
+					"## Load Product List via COSMOS DB and Synapse Link\n",
+					""
+				]
+			},
+			{
+				"cell_type": "code",
+				"source": [
+					"df_products = spark.read\\\r\n",
+					"    .format(\"cosmos.olap\")\\\r\n",
+					"    .option(\"spark.synapse.linkedService\", \"RetailSalesDemoDB\")\\\r\n",
+					"    .option(\"spark.cosmos.container\", \"Products\")\\\r\n",
+					"    .load()\r\n",
+					"\r\n",
+					"#display(df_products)"
+				],
+				"attachments": null,
+				"execution_count": 4
+			},
+			{
+				"cell_type": "markdown",
+				"source": [
+					"## Load Sales via COSMOS DB and Synapse Link\n",
+					""
+				]
+			},
+			{
+				"cell_type": "code",
+				"metadata": {
+					"jupyter": {
+						"source_hidden": false,
+						"outputs_hidden": false
+					},
+					"nteract": {
+						"transient": {
+							"deleting": false
+						}
+					},
+					"collapsed": true
+				},
+				"source": [
+					"df_retailsales = spark.read\\\n",
+					"    .format(\"cosmos.olap\")\\\n",
+					"    .option(\"spark.synapse.linkedService\", \"RetailSalesDemoDB\")\\\n",
+					"    .option(\"spark.cosmos.container\", \"RetailSales\")\\\n",
+					"    .load()\n",
+					"\n",
+					"#display(df_retailsales, summary = True)"
+				],
+				"attachments": null,
+				"execution_count": 5
+			},
+			{
+				"cell_type": "markdown",
+				"source": [
+					"## Load Store Info via ADSL Gen 2 + Delta Lake\n",
+					""
+				]
+			},
+			{
+				"cell_type": "code",
+				"metadata": {
+					"jupyter": {
+						"source_hidden": false,
+						"outputs_hidden": false
+					},
+					"nteract": {
+						"transient": {
+							"deleting": false
+						}
+					},
+					"collapsed": true
+				},
+				"source": [
+					"df_storedemographics = spark.read.format(\"delta\").load('abfss://default@azuresynapsesa.dfs.core.windows.net/RetailData/')\r\n",
+					"\r\n",
+					"#display(df_storedemographics)"
+				],
+				"attachments": null,
+				"execution_count": 6
+			},
+			{
+				"cell_type": "markdown",
+				"source": [
+					"## Join the 3 datasets together, optimise with broadcast joins\n",
+					""
+				]
+			},
+			{
+				"cell_type": "code",
+				"metadata": {
+					"jupyter": {
+						"source_hidden": false,
+						"outputs_hidden": false
+					},
+					"nteract": {
+						"transient": {
+							"deleting": false
+						}
+					},
+					"collapsed": true
+				},
+				"source": [
+					"%%timeit\n",
+					"from pyspark.sql.functions import broadcast\n",
+					"\n",
+					"df = df_retailsales.join(broadcast(df_products), on=['productCode'], how='left').join(broadcast(df_storedemographics), on=['storeId'], how = 'left')\n",
+					"\n",
+					"#display(df)"
+				],
+				"attachments": null,
+				"execution_count": 9
+			},
+			{
+				"cell_type": "markdown",
+				"source": [
+					"## Data Prep - Clean up unnecessary columns post join\n",
+					""
+				]
+			},
+			{
+				"cell_type": "code",
+				"metadata": {
+					"jupyter": {
+						"source_hidden": false,
+						"outputs_hidden": false
+					},
+					"nteract": {
+						"transient": {
+							"deleting": false
+						}
+					},
+					"collapsed": true
+				},
+				"source": [
+					"df = df.drop(\"_rid\",\"_ts\",\"_etag\",\"id\")\n",
+					"\n",
+					"#display(df)"
+				],
+				"attachments": null,
+				"execution_count": 10
+			},
+			{
+				"cell_type": "markdown",
+				"source": [
+					"## Data Prep - Fix up columns types\n",
+					""
+				]
+			},
+			{
+				"cell_type": "code",
+				"metadata": {
+					"jupyter": {
+						"source_hidden": false,
+						"outputs_hidden": false
+					},
+					"nteract": {
+						"transient": {
+							"deleting": false
+						}
+					},
+					"collapsed": true
+				},
+				"source": [
+					"from pyspark.sql.types import IntegerType, DoubleType, FloatType, DateType\n",
+					"from pyspark.sql.functions import to_date\n",
+					"\n",
+					"clean_df = df.withColumn(\"basePrice\",df[\"basePrice\"].cast(FloatType())) \\\n",
+					"             .withColumn(\"quantity\", df[\"quantity\"].cast(FloatType())) \\\n",
+					"             .withColumn(\"price\", df[\"price\"].cast(FloatType())) \\\n",
+					"             .withColumn(\"logQuantity\", df[\"logQuantity\"].cast(FloatType())) \\\n",
+					"             .withColumn(\"wholeSaleCost\", df[\"wholeSaleCost\"].cast(FloatType())) \\\n",
+					"             .withColumn(\"weekStarting\", to_date(df[\"weekStarting\"], 'mm/dd/yyyy'))\n",
+					"\n",
+					"#display(clean_df) "
+				],
+				"attachments": null,
+				"execution_count": 11
+			},
+			{
+				"cell_type": "markdown",
+				"source": [
+					"## Data Prep create a derived column and filter data\n",
+					""
+				]
+			},
+			{
+				"cell_type": "code",
+				"metadata": {
+					"jupyter": {
+						"source_hidden": false,
+						"outputs_hidden": false
+					},
+					"nteract": {
+						"transient": {
+							"deleting": false
+						}
+					},
+					"collapsed": true
+				},
+				"source": [
+					"feature_df = clean_df.withColumn(\"sales\", (clean_df.price * clean_df.quantity)) \\\r\n",
+					"             .where(clean_df.highIncome150Ratio > 0.9)"
+				],
+				"attachments": null,
+				"execution_count": 12
+			},
+			{
+				"cell_type": "code",
+				"metadata": {
+					"jupyter": {
+						"source_hidden": false,
+						"outputs_hidden": false
+					},
+					"nteract": {
+						"transient": {
+							"deleting": false
+						}
+					},
+					"collapsed": true
+				},
+				"source": [
+					"feature_df.printSchema()"
+				],
+				"attachments": null,
+				"execution_count": 13
+			},
+			{
+				"cell_type": "code",
+				"metadata": {
+					"jupyter": {
+						"source_hidden": false,
+						"outputs_hidden": false
+					},
+					"nteract": {
+						"transient": {
+							"deleting": false
+						}
+					},
+					"diagram": {
+						"activateDiagramType": 1,
+						"chartConfig": {
+							"category": "bar",
+							"keys": [
+								"storeId"
+							],
+							"values": [
+								"logQuantity"
+							],
+							"yLabel": "logQuantity",
+							"xLabel": "storeId",
+							"aggregation": "SUM",
+							"aggByBackend": false
+						},
+						"aggData": "{\"logQuantity\":{\"62\":3200.6602481000027}}",
+						"isSummary": false,
+						"previewData": {
+							"filter": null
+						},
+						"isSql": false
+					},
+					"collapsed": true
+				},
+				"source": [
+					"display(feature_df)"
+				],
+				"attachments": null,
+				"execution_count": 18
+			},
+			{
+				"cell_type": "markdown",
+				"source": [
+					"## Create a table in the catalog\n",
+					""
+				]
+			},
+			{
+				"cell_type": "code",
+				"source": [
+					"feature_df.write.mode(\"overwrite\").saveAsTable(\"SurfaceSales_FeatureDF\")"
+				],
+				"execution_count": 19
+			},
+			{
+				"cell_type": "markdown",
+				"source": [
+					"## Produce the same query as in SQL serverless example\n",
+					""
+				]
+			},
+			{
+				"cell_type": "code",
+				"metadata": {
+					"diagram": {
+						"activateDiagramType": 1,
+						"chartConfig": {
+							"category": "bar",
+							"keys": [
+								"productCode"
+							],
+							"values": [
+								"sum(sales)"
+							],
+							"yLabel": "sum(sales)",
+							"xLabel": "productCode",
+							"aggregation": "SUM",
+							"aggByBackend": false,
+							"series": null,
+							"isValid": true,
+							"inValidMsg": null
+						},
+						"aggData": "{\"sum(sales)\":{\"surface.go\":1350512,\"surface.laptop3\":6786157,\"surface.pro7\":3739633}}",
+						"isSummary": false,
+						"previewData": {
+							"filter": null
+						},
+						"isSql": true
+					}
+				},
+				"source": [
+					"%%sql\n",
+					"\n",
+					"SELECT \n",
+					"    productCode, SUM(sales), weekStarting\n",
+					"FROM\n",
+					"    SurfaceSales_FeatureDF\n",
+					"GROUP BY\n",
+					"    productCode, weekStarting"
+				],
+				"execution_count": 20
+			}
+		]
+	}
+}

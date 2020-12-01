@@ -1,13 +1,16 @@
 {
 	"name": "SQL script 2",
 	"properties": {
+		"folder": {
+			"name": "Set up scripts"
+		},
 		"content": {
-			"query": "-- type your sql script here, we now have intellisense\n\nCREATE USER [lipeng@microsoft.com] FROM EXTERNAL PROVIDER;\nEXEC sp_addrolemember 'db_owner', 'lipeng@microsoft.com';",
+			"query": "CREATE PROCEDURE dbo.testscoring1030\nAS\nBEGIN\n\nSELECT\n    CAST([productCode] AS [float]) AS [productCode],\n    CAST([price] AS [float]) AS [price],\n    CAST([advertising] AS [float]) AS [advertising],\n    CAST([storeId] AS [float]) AS [storeId],\n    CAST([weekStarting] AS [float]) AS [weekStarting],\n    CAST([wholeSaleCost] AS [float]) AS [wholeSaleCost],\n    CAST([basePrice] AS [float]) AS [basePrice],\n    CAST([income] AS [float]) AS [income],\n    CAST([minoritiesRatio] AS [float]) AS [minoritiesRatio],\n    CAST([largeHH] AS [float]) AS [largeHH],\n    CAST([highIncome150Ratio] AS [float]) AS [highIncome150Ratio],\n    CAST([more1FullTimeEmployeeRatio] AS [float]) AS [more1FullTimeEmployeeRatio],\n    CAST([ratioAge60] AS [float]) AS [ratioAge60],\n    CAST([salesNearestWarehousesRatio] AS [float]) AS [salesNearestWarehousesRatio],\n    CAST([salesNearest5StoresRatio] AS [float]) AS [salesNearest5StoresRatio],\n    CAST([collegeRatio] AS [float]) AS [collegeRatio],\n    CAST([avgDistanceNearest5Supermarkets] AS [float]) AS [avgDistanceNearest5Supermarkets],\n    CAST([distanceNearestWarehouse] AS [float]) AS [distanceNearestWarehouse]\nINTO [dbo].[#retail_scoring_data]\nFROM [dbo].[retail_scoring_data];\n\nSELECT *\nFROM PREDICT (MODEL = (SELECT [model] FROM dbo.AMLModels WHERE [ID] = 'synapse_retail_model_hb:4'),\n              DATA = [dbo].[retail_scoring_data_1101]) WITH ([quantity] [float])\n\nEND\nGO\n\nEXEC dbo.testscoring1030",
 			"metadata": {
 				"language": "sql"
 			},
 			"currentConnection": {
-				"name": "SQLDB1",
+				"name": "Predict_Pool",
 				"type": "SqlPool"
 			}
 		},
